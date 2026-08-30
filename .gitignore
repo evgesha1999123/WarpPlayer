@@ -1,0 +1,83 @@
+.vs/
+Test/три дня дождя - демоны slowed + reverb - gloomy tears.mp3
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM/
+ARM64/
+
+# Visual Studio generated files
+*.VC.db
+*.VC.VC.opendb
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Test results
+TestResults/
+*.trx
+
+# Code coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# ReSharper / Rider
+_ReSharper*/
+*.[Rr]e[Ss]harper
+.idea/
+
+# VS Code
+.vscode/
+
+# Generated files
+Generated Files/
+Generated/
+*.generated.cs
+*.g.cs
+
+# WinUI / Windows App SDK
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+Package.StoreAssociation.xml
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.appinstaller
+
+# MSIX / packaging generated files
+*.pfx
+*.cer
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# User-specific local files
+*.local
