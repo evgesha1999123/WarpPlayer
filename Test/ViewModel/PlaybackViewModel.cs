@@ -12,10 +12,17 @@ namespace Test.ViewModel
         private PlaybackState playbackState;
         public string FilePath => playbackService.filePath;
 
+        public int ForwardPlaybackRewindDelta { get; private set; } = 0;
+        public int BackwardPlaybackRewindDelta { get; private set; } = 0;
+
         public PlaybackViewModel(PlaybackService playbackService)
         {
             this.playbackService = playbackService;
             playbackState = playbackService.playbackState;
+
+            ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
+            BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
+            
         }
 
         [RelayCommand]
@@ -40,9 +47,9 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
-        private void Rewind()
+        private void Rewind(int delta)
         {
-            playbackService.Rewind();
+            playbackService.Rewind(delta);
         }
 
     }

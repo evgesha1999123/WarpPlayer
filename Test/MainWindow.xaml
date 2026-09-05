@@ -36,9 +36,22 @@
                 <SymbolIcon Symbol="Previous" />
             </Button>
 
+            <Button 
+                Command="{x:Bind PlaybackVM.RewindCommand}" 
+                CommandParameter="{x:Bind PlaybackVM.BackwardPlaybackRewindDelta}">
+                    <FontIcon Glyph="&#xeb9e;" />
+            </Button>
+
             <Button Command="{x:Bind PlaybackVM.PlayCommand}">
                 <SymbolIcon Symbol="Play" />
             </Button>
+
+            <Button 
+                Command="{x:Bind PlaybackVM.RewindCommand}" 
+                CommandParameter="{x:Bind PlaybackVM.ForwardPlaybackRewindDelta}">
+                <FontIcon Glyph="&#xeb9d;" />
+            </Button>
+
 
             <Button>
                 <SymbolIcon Symbol="Next" />
