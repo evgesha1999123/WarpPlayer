@@ -129,12 +129,6 @@ namespace Test.ViewModel
         {
             playbackService.Rewind(delta);
 
-            //if (currentPlaybackTime >= totalTrackLenSeconds)
-            //{
-            //    Stop();
-            //    Play();
-            //}
-
             OnPropertyChanged(nameof(currentPlaybackTime));
         }
 
@@ -154,8 +148,6 @@ namespace Test.ViewModel
         {
             playbackSpeed = speed;
             OnPropertyChanged(nameof(displayTotalTrackLenSeconds));
-
-            Debug.WriteLine($"total time: {totalTrackLenSeconds}");
         }
     }
 }
