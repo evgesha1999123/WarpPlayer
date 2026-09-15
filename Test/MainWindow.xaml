@@ -89,7 +89,7 @@
             Orientation="Vertical"
             Minimum="0.25"
             Maximum="2"
-            StepFrequency="0.001"
+            StepFrequency="0.01"
             Value="{x:Bind PlaybackVM.playbackSpeed, Mode=OneWay}"
             ValueChanged="SpeedSlider_ValueChanged"
             Height="250" 

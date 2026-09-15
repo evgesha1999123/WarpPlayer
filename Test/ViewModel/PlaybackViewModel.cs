@@ -153,6 +153,9 @@ namespace Test.ViewModel
         public void SetSpeed(float speed)
         {
             playbackSpeed = speed;
+            OnPropertyChanged(nameof(displayTotalTrackLenSeconds));
+
+            Debug.WriteLine($"total time: {totalTrackLenSeconds}");
         }
     }
 }
