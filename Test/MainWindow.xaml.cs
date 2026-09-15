@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using System.Diagnostics;
 
 using Test.Service;
 using Test.ViewModel;
@@ -34,6 +35,11 @@ namespace Test
             var playbackService = new PlaybackService();
 
             PlaybackVM = new PlaybackViewModel(playbackService);
+        }
+
+        private void PlaybackSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            PlaybackVM.Seek(e.NewValue);
         }
     }
 }

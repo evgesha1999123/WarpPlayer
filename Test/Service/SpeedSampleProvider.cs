@@ -1,6 +1,7 @@
 ﻿using NAudio.Wave;
 using System;
 
+
 namespace Test.Service
 {
     public class SpeedSampleProvider : ISampleProvider

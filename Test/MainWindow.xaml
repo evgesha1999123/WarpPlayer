@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="Test.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -13,45 +12,56 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid RowDefinitions="*,Auto,Auto">
 
         <!-- Информация о текущем треке -->
         <Grid Grid.Row="0">
             <TextBlock
-            Text="Artist — Track Name"
-            FontSize="24"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center" />
+                Text="Artist — Track Name"
+                FontSize="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
         </Grid>
+
+        <!-- Слайдер воспроизведения -->
+        <Slider
+            x:Name="PlaybackSlider"
+            Grid.Row="1"
+            Minimum="0"
+            Maximum="{x:Bind PlaybackVM.displayTotalTrackLenSeconds, Mode=OneWay}"
+            Value="{x:Bind PlaybackVM.currentPlaybackTime, Mode=OneWay}"
+            ValueChanged="PlaybackSlider_ValueChanged"
+            Width="600"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,20" />
 
         <!-- Кнопки управления -->
         <StackPanel
-        Grid.Row="1"
-        Spacing="10"
-        Orientation="Horizontal"
-        HorizontalAlignment="Center"
-        Margin="0,0,0,20">
+            Grid.Row="2"
+            Spacing="10"
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,20">
 
             <Button>
                 <SymbolIcon Symbol="Previous" />
             </Button>
 
-            <Button 
-                Command="{x:Bind PlaybackVM.RewindCommand}" 
+            <Button
+                Command="{x:Bind PlaybackVM.RewindCommand}"
                 CommandParameter="{x:Bind PlaybackVM.BackwardPlaybackRewindDelta}">
-                    <FontIcon Glyph="&#xeb9e;" />
+                <FontIcon Glyph="&#xeb9e;" />
             </Button>
 
-            <Button Command="{x:Bind PlaybackVM.PlayCommand}">
-                <SymbolIcon Symbol="Play" />
+            <Button Command="{x:Bind PlaybackVM.TogglePlaybackCommand}">
+                <SymbolIcon Symbol="{x:Bind PlaybackVM.playPauseIcon, Mode=OneWay}" />
             </Button>
 
-            <Button 
-                Command="{x:Bind PlaybackVM.RewindCommand}" 
+            <Button
+                Command="{x:Bind PlaybackVM.RewindCommand}"
                 CommandParameter="{x:Bind PlaybackVM.ForwardPlaybackRewindDelta}">
                 <FontIcon Glyph="&#xeb9d;" />
             </Button>
-
 
             <Button>
                 <SymbolIcon Symbol="Next" />

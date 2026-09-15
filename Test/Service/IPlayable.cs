@@ -12,7 +12,9 @@ namespace Test.Service
         public void Play();
         public void Pause();
 
-        public void Rewind(int delta);
+        public void Rewind(double delta);
         public void Stop();
+
+        public void Seek(double seconds);
     }
 }

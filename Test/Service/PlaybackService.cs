@@ -1,8 +1,6 @@
 ﻿using System;
 using NAudio.Wave;
 using System.Diagnostics;
-using System.IO;
-using System;
 
 
 namespace Test.Service
@@ -22,11 +20,22 @@ namespace Test.Service
         public int ForwardPlaybackRewindDelta { get; private set; } = 9;
         public int BackwardPlaybackRewindDelta { get; private set; } = -9;
 
-        public int totalTrackLenSeconds { get; set; } = 0;
+        public float playbackSpeed = .8f;
 
-        public PlaybackState playbackState = PlaybackState.Init;
+        public PlaybackState playbackState
+        {
+            get => _playbackState;
+
+            private set => _playbackState = value;
+        }
+
+        public double currentPlaybackTime => audioFileReader.CurrentTime.TotalSeconds / playbackSpeed;
+        public double totalPlaybackDuration => audioFileReader.TotalTime.TotalSeconds / playbackSpeed;
+
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFileReader;
+
+        private PlaybackState _playbackState = PlaybackState.Init;
 
         private bool canStartPlaypack { 
             get
@@ -56,14 +65,12 @@ namespace Test.Service
             audioFileReader = new AudioFileReader(filePath);
             outputDevice = new WaveOutEvent();
 
-            totalTrackLenSeconds = (int)audioFileReader.TotalTime.TotalSeconds;
-
             var speedSampleProvider = new SpeedSampleProvider(audioFileReader.ToSampleProvider());
 
             Debug.WriteLine($"Hello from Playback. Now playing: '{filePath}'");
             Debug.WriteLine($"Track Length: '{audioFileReader.TotalTime}'");
 
-            speedSampleProvider.Speed = 1f;
+            speedSampleProvider.Speed = playbackSpeed;
 
             outputDevice.Init(speedSampleProvider);
         }
@@ -85,30 +92,30 @@ namespace Test.Service
             }
         }
 
-        public void Rewind(int delta)
+        public void Rewind(double delta)
         {
 
-            int newCurrentTime = (int)audioFileReader.CurrentTime.TotalSeconds + delta;
+            double currentPlaybackSeconds = audioFileReader.CurrentTime.TotalSeconds;
 
-            if (newCurrentTime >= totalTrackLenSeconds)
+            double newPlaybackSeconds = currentPlaybackSeconds + delta;
+
+            if (newPlaybackSeconds >= totalPlaybackDuration)
             {
-                Debug.WriteLine("END");
                 audioFileReader.CurrentTime = audioFileReader.TotalTime;
             }
 
-            else if (newCurrentTime > 0)
+            else if (newPlaybackSeconds > 0)
             {
-                Debug.WriteLine("Rewind");
-                audioFileReader.CurrentTime = TimeSpan.FromSeconds(newCurrentTime);
+                Debug.WriteLine($"delta: {delta}");
+                audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPlaybackSeconds);
             }
 
             else
             {
-                Debug.WriteLine("START");
                 audioFileReader.CurrentTime = TimeSpan.Zero;
             }
 
-            Debug.WriteLine($"current position: {audioFileReader.CurrentTime} | Length: {audioFileReader.TotalTime}");
+            Debug.WriteLine($"current position: {currentPlaybackSeconds} | Length: {audioFileReader.TotalTime}");
 
          }
 
@@ -120,6 +127,13 @@ namespace Test.Service
                 audioFileReader.CurrentTime = TimeSpan.Zero;
                 playbackState = PlaybackState.Stopped;
             }
+        }
+
+        public void Seek(double seconds)
+        {
+            double sourceSeconds = seconds * playbackSpeed;
+            sourceSeconds = Math.Clamp(sourceSeconds, 0, audioFileReader.TotalTime.TotalSeconds);
+            audioFileReader.CurrentTime = TimeSpan.FromSeconds(sourceSeconds);
         }
     }
 }
