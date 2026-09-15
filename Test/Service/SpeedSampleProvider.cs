@@ -1,5 +1,8 @@
 ﻿using NAudio.Wave;
 using System;
+using System.Diagnostics;
+using System.DirectoryServices;
+using System.Runtime.CompilerServices;
 
 
 namespace Test.Service
@@ -9,7 +12,7 @@ namespace Test.Service
         private readonly ISampleProvider source;
         private readonly int channels;
 
-        public float Speed { get; set; } = 2.0f;
+        public float Speed { get; set; } = 1.0f;
 
         public WaveFormat WaveFormat => source.WaveFormat;
 

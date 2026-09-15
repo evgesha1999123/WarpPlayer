@@ -41,5 +41,10 @@ namespace Test
         {
             PlaybackVM.Seek(e.NewValue);
         }
+
+        private void SpeedSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            PlaybackVM?.SetSpeed((float)e.NewValue);
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using NAudio.Wave;
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 
 
 namespace Test.Service
@@ -20,17 +21,22 @@ namespace Test.Service
         public int ForwardPlaybackRewindDelta { get; private set; } = 9;
         public int BackwardPlaybackRewindDelta { get; private set; } = -9;
 
-        public float playbackSpeed = .8f;
+        public float playbackSpeed
+        {
+            get => speedSampleProvider.Speed;
+            set => speedSampleProvider.Speed = value;
+        }
 
         public PlaybackState playbackState
         {
             get => _playbackState;
-
             private set => _playbackState = value;
         }
 
         public double currentPlaybackTime => audioFileReader.CurrentTime.TotalSeconds / playbackSpeed;
         public double totalPlaybackDuration => audioFileReader.TotalTime.TotalSeconds / playbackSpeed;
+
+        private SpeedSampleProvider speedSampleProvider;
 
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFileReader;
@@ -65,7 +71,7 @@ namespace Test.Service
             audioFileReader = new AudioFileReader(filePath);
             outputDevice = new WaveOutEvent();
 
-            var speedSampleProvider = new SpeedSampleProvider(audioFileReader.ToSampleProvider());
+            speedSampleProvider = new SpeedSampleProvider(audioFileReader.ToSampleProvider());
 
             Debug.WriteLine($"Hello from Playback. Now playing: '{filePath}'");
             Debug.WriteLine($"Track Length: '{audioFileReader.TotalTime}'");
@@ -94,30 +100,24 @@ namespace Test.Service
 
         public void Rewind(double delta)
         {
+            bool wasPlaying = playbackState == PlaybackState.Playing;
 
-            double currentPlaybackSeconds = audioFileReader.CurrentTime.TotalSeconds;
-
-            double newPlaybackSeconds = currentPlaybackSeconds + delta;
-
-            if (newPlaybackSeconds >= totalPlaybackDuration)
+            if (wasPlaying) 
             {
-                audioFileReader.CurrentTime = audioFileReader.TotalTime;
+                outputDevice.Stop(); 
             }
 
-            else if (newPlaybackSeconds > 0)
-            {
-                Debug.WriteLine($"delta: {delta}");
-                audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPlaybackSeconds);
+            double newPlaybackSeconds = currentPlaybackTime + delta;
+
+            newPlaybackSeconds = Math.Clamp(newPlaybackSeconds, 0, totalPlaybackDuration);
+
+            audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPlaybackSeconds * playbackSpeed);
+
+            if (wasPlaying)
+            { 
+                outputDevice.Play(); 
             }
-
-            else
-            {
-                audioFileReader.CurrentTime = TimeSpan.Zero;
-            }
-
-            Debug.WriteLine($"current position: {currentPlaybackSeconds} | Length: {audioFileReader.TotalTime}");
-
-         }
+        }
 
         public void Stop()
         {

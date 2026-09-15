@@ -73,6 +73,30 @@
 
         </StackPanel>
 
+        <StackPanel
+        Grid.Column="0"
+        VerticalAlignment="Center"
+        HorizontalAlignment="Left"
+        Spacing="7"
+        Margin="14, 0, 0, 0">
+
+            <TextBlock
+            Text="Скорость"
+            HorizontalAlignment="Left" />
+            
+            <!-- Слайдер скорости -->
+            <Slider
+            Orientation="Vertical"
+            Minimum="0.25"
+            Maximum="2"
+            StepFrequency="0.001"
+            Value="{x:Bind PlaybackVM.playbackSpeed, Mode=OneWay}"
+            ValueChanged="SpeedSlider_ValueChanged"
+            Height="250" 
+            Margin="12, 0, 0, 0"/>
+
+        </StackPanel>
+
     </Grid>
 
 </Window>

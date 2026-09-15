@@ -34,6 +34,12 @@ namespace Test.ViewModel
         public double totalTrackLenSeconds => playbackService.totalPlaybackDuration;
         public int displayTotalTrackLenSeconds => (int)playbackService.totalPlaybackDuration;
 
+        public float playbackSpeed
+        {
+            get => playbackService.playbackSpeed;
+            set => playbackService.playbackSpeed = value;
+        }
+
         private readonly PlaybackService playbackService;
 
         private bool canStartPlayback { get => playbackState == PlaybackState.Init || playbackState == PlaybackState.Stopped || playbackState == PlaybackState.Paused; }
@@ -49,7 +55,7 @@ namespace Test.ViewModel
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
 
             Timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-            Timer.Interval = TimeSpan.FromSeconds(1);
+            Timer.Interval = TimeSpan.FromSeconds(0.3f);
 
             // Then, subscribe timer tick event
             Timer.Tick += PlaybackTimer_Tick;
@@ -57,10 +63,12 @@ namespace Test.ViewModel
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
         {
-            Debug.WriteLine(currentPlaybackTime);
-            Debug.WriteLine(totalTrackLenSeconds);
-
             isUpdatingSlider = true;
+
+            if ((int)currentPlaybackTime >= (int)totalTrackLenSeconds)
+            {
+                Stop();
+            }
 
             OnPropertyChanged(nameof(currentPlaybackTime));
 
@@ -121,11 +129,11 @@ namespace Test.ViewModel
         {
             playbackService.Rewind(delta);
 
-            if (currentPlaybackTime >= totalTrackLenSeconds)
-            {
-                Stop();
-                Play();
-            }
+            //if (currentPlaybackTime >= totalTrackLenSeconds)
+            //{
+            //    Stop();
+            //    Play();
+            //}
 
             OnPropertyChanged(nameof(currentPlaybackTime));
         }
@@ -139,6 +147,12 @@ namespace Test.ViewModel
             }
 
             playbackService.Seek(seconds);
+        }
+
+        [RelayCommand]
+        public void SetSpeed(float speed)
+        {
+            playbackSpeed = speed;
         }
     }
 }
