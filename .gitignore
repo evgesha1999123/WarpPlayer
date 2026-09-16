@@ -71,6 +71,7 @@ Package.StoreAssociation.xml
 # OS files
 .DS_Store
 Thumbs.db
+*.db
 desktop.ini
 
 # Temporary files

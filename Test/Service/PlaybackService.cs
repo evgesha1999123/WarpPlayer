@@ -1,7 +1,7 @@
-﻿using System;
-using NAudio.Wave;
+﻿using NAudio.Wave;
+using System;
 using System.Diagnostics;
-
+using Test.Database;
 
 namespace Test.Service
 {
@@ -74,6 +74,8 @@ namespace Test.Service
 
             Debug.WriteLine($"Hello from Playback. Now playing: '{filePath}'");
             Debug.WriteLine($"Track Length: '{_audioFileReader.TotalTime}'");
+
+            TestConnection.Ping();
 
             _speedSampleProvider.Speed = PlaybackSpeed;
 
