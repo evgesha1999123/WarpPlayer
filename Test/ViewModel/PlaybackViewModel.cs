@@ -10,80 +10,84 @@ namespace Test.ViewModel
 {
     public partial class PlaybackViewModel : ObservableObject
     {
-        public string FilePath => playbackService.filePath;
+        public string FilePath => _playbackService.FilePath;
 
         public int ForwardPlaybackRewindDelta { get; }
         public int BackwardPlaybackRewindDelta { get; }
 
-        public bool isUpdatingSlider = false;
+        public bool IsUpdatingSlider = false;
 
-        public PlaybackState playbackState
+        public PlaybackState PlaybackState
         {
-            get => playbackService.playbackState;
+            get => _playbackService.PlaybackState;
         }
 
-        public Symbol playPauseIcon
+        public Symbol PlayPauseIcon
         {
             get
             {
-                return playbackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
+                return PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
             }
         }
 
-        public double currentPlaybackTime => playbackService.currentPlaybackTime;
-        public double totalTrackLenSeconds => playbackService.totalPlaybackDuration;
-        public int displayTotalTrackLenSeconds => (int)playbackService.totalPlaybackDuration;
+        public double CurrentPlaybackTime => _playbackService.CurrentPlaybackTime;
+        public double TotalTrackLenSeconds => _playbackService.TotalPlaybackDuration;
+        public int DisplayTotalTrackLenSeconds => (int)_playbackService.TotalPlaybackDuration;
 
-        public float playbackSpeed
+        public string CurrentTrackPositionUI => TimeSpan.FromSeconds(_playbackService.CurrentPlaybackTime).ToString(@"mm\:ss");
+        public string TrackDurationUI => TimeSpan.FromSeconds(_playbackService.TotalPlaybackDuration).ToString(@"mm\:ss");
+
+        public float PlaybackSpeed
         {
-            get => playbackService.playbackSpeed;
-            set => playbackService.playbackSpeed = value;
+            get => _playbackService.PlaybackSpeed;
+            set => _playbackService.PlaybackSpeed = value;
         }
 
-        private readonly PlaybackService playbackService;
+        private readonly PlaybackService _playbackService;
 
-        private bool canStartPlayback { get => playbackState == PlaybackState.Init || playbackState == PlaybackState.Stopped || playbackState == PlaybackState.Paused; }
-        private bool canPausePlayback { get => playbackState == PlaybackState.Playing; }
-        private readonly DispatcherQueueTimer Timer;
+        private bool CanStartPlayback { get => PlaybackState == PlaybackState.Init || PlaybackState == PlaybackState.Stopped || PlaybackState == PlaybackState.Paused; }
+        private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
+        private readonly DispatcherQueueTimer _timer;
 
 
         public PlaybackViewModel(PlaybackService playbackService)
         {
-            this.playbackService = playbackService;
+            _playbackService = playbackService;
 
             ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
 
-            Timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-            Timer.Interval = TimeSpan.FromSeconds(0.3f);
+            _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(0.3f);
 
             // Then, subscribe timer tick event
-            Timer.Tick += PlaybackTimer_Tick;
+            _timer.Tick += PlaybackTimer_Tick;
         }
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
         {
-            isUpdatingSlider = true;
+            IsUpdatingSlider = true;
 
-            if ((int)currentPlaybackTime >= (int)totalTrackLenSeconds)
+            if ((int)CurrentPlaybackTime >= (int)TotalTrackLenSeconds)
             {
                 Stop();
             }
 
-            OnPropertyChanged(nameof(currentPlaybackTime));
+            OnPropertyChanged(nameof(CurrentPlaybackTime));
+            OnPropertyChanged(nameof(CurrentTrackPositionUI));
 
-            isUpdatingSlider = false;
+            IsUpdatingSlider = false;
         }
 
         [RelayCommand]
         public void TogglePlayback()
         {
-            if (canStartPlayback)
+            if (CanStartPlayback)
             {
                 Play();
             }
 
-            else if (canPausePlayback)
+            else if (CanPausePlayback)
             {
                 Pause();
             }
@@ -92,62 +96,63 @@ namespace Test.ViewModel
         [RelayCommand]
         public void Play()
         {
-            playbackService.Play();
+            _playbackService.Play();
 
-            Timer.Start();
+            _timer.Start();
 
-            OnPropertyChanged(nameof(playbackState));
-            OnPropertyChanged(nameof(playPauseIcon));
+            OnPropertyChanged(nameof(PlaybackState));
+            OnPropertyChanged(nameof(PlayPauseIcon));
         }
 
         [RelayCommand]
         public void Pause()
         {
-            playbackService.Pause();
+            _playbackService.Pause();
 
-            Timer.Stop();
+            _timer.Stop();
 
-            OnPropertyChanged(nameof(playbackState));
-            OnPropertyChanged(nameof(playPauseIcon));
+            OnPropertyChanged(nameof(PlaybackState));
+            OnPropertyChanged(nameof(PlayPauseIcon));
         }
 
         [RelayCommand]
         public void Stop()
         {
-            playbackService.Stop();
+            _playbackService.Stop();
 
-            Timer.Stop();
+            _timer.Stop();
 
-            OnPropertyChanged(nameof(playbackState));
-            OnPropertyChanged(nameof(playPauseIcon));
+            OnPropertyChanged(nameof(PlaybackState));
+            OnPropertyChanged(nameof(PlayPauseIcon));
 
-            OnPropertyChanged(nameof(currentPlaybackTime));
+            OnPropertyChanged(nameof(CurrentPlaybackTime));
         }
 
         [RelayCommand]
         public void Rewind(int delta)
         {
-            playbackService.Rewind(delta);
+            _playbackService.Rewind(delta);
 
-            OnPropertyChanged(nameof(currentPlaybackTime));
+            OnPropertyChanged(nameof(CurrentPlaybackTime));
         }
 
         [RelayCommand]
         public void Seek(double seconds)
         {
-            if (isUpdatingSlider)
+            if (IsUpdatingSlider)
             {
                 return;
             }
 
-            playbackService.Seek(seconds);
+            _playbackService.Seek(seconds);
         }
 
         [RelayCommand]
         public void SetSpeed(float speed)
         {
-            playbackSpeed = speed;
-            OnPropertyChanged(nameof(displayTotalTrackLenSeconds));
+            PlaybackSpeed = speed;
+            OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds));
+            OnPropertyChanged(nameof(TrackDurationUI));
         }
     }
 }
