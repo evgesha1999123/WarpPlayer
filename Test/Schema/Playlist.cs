@@ -3,13 +3,15 @@
 
 namespace Test.Schema
 {
-    public class Playlist: ITimestampable
+    public class Playlist 
     {
-        public string? PlaylistId { get; set; }
-        public string[]? TrackIds { get; set; }
-        public string? Name { get; set; }
+        public required string Name { get; set; }
         public string? Description { get; set; }
-
+    }
+    public class PlaylistRecord: Playlist, ITimestampable
+    {
+        public required Guid PlaylistId { get; init; }
+        public Guid[] TrackIds { get; set; } = [];
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
