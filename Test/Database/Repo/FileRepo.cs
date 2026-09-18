@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -65,18 +66,31 @@ namespace Test.Database.Repo
             Guid guid = Guid.NewGuid();
 
             command.Parameters.AddWithValue("$TrackId", guid.ToString());
+
             command.Parameters.AddWithValue("$Title", file.Title);
+
             command.Parameters.AddWithValue("$Cover", file.Cover ?? NULL);
+
             command.Parameters.AddWithValue("$Artist", file.Artist);
+
             command.Parameters.AddWithValue("$Album", file.Album ?? NULL);
+
             command.Parameters.AddWithValue("$AlbumArtist", file.AlbumArtist ?? NULL);
+
             command.Parameters.AddWithValue("$Duration", (int)file.Duration.TotalSeconds);
+
             command.Parameters.AddWithValue("$FilePath", file.FilePath);
+
             command.Parameters.AddWithValue("$Genres", JsonSerializer.Serialize(file.Genres));
+
             command.Parameters.AddWithValue("$Year", file.Year ?? NULL);
+
             command.Parameters.AddWithValue("$TrackNumber", file.TrackNumber ?? NULL);
+
             command.Parameters.AddWithValue("$DiscNumber", file.DiscNumber ?? NULL);
+
             command.Parameters.AddWithValue("$CreatedAt", now);
+
             command.Parameters.AddWithValue("$UpdatedAt", now);
 
             command.ExecuteNonQuery();
@@ -103,14 +117,14 @@ namespace Test.Database.Repo
         // TODO: Переделать в bulk
         public IReadOnlyList<TrackRecord> CreateMany(IReadOnlyCollection<Track> files)
         {
-            List<TrackRecord> tracks = [];
+            List<TrackRecord> result = [];
 
             foreach (Track file in files)
             {
-                tracks.Add(Create(file));
+                result.Add(Create(file));
             }
 
-            return tracks;
+            return result;
         }
 
         public bool Delete(Guid id)
@@ -130,13 +144,20 @@ namespace Test.Database.Repo
             command.ExecuteNonQuery();
         }
 
-        // TODO: Переделать в bulk
         public void DeleteMany(IReadOnlyCollection<Guid> ids)
         {
-            foreach (var id in ids)
+            using var command = _connection.CreateCommand();
+            var parameters = ids.Select((id, i) => new { id, name = $"id{i}" }).ToList();
+            string params_sql = $"{string.Join(", ", parameters.Select(x => x.name))}";
+
+            command.CommandText = $"delete * from Tracks where TrackId in ({params_sql})";
+
+            foreach (var param in parameters)
             {
-                Delete(id);
+                command.Parameters.AddWithValue(param.name, param.id.ToString());
             }
+
+            command.ExecuteNonQuery();
         }
 
         public TrackRecord Get(Guid id)
@@ -151,17 +172,94 @@ namespace Test.Database.Repo
             {
                 throw new KeyNotFoundException($"<{this}> Record with id='{id}' does not exist");
             }
-            // ...
+
+            return SerializeSchema(reader);
         }
 
         public IReadOnlyList<TrackRecord> GetAll()
         {
-            throw new NotImplementedException();
+            List<TrackRecord> result = [];
+
+            using var command = _connection.CreateCommand();
+            command.CommandText = "select * from Track;";
+
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var model = SerializeSchema(reader);
+                if (model != null)
+                {
+                    result.Add(model);
+                }
+            }
+
+            return result;
         }
 
-        public IReadOnlyList<TrackRecord> GetMany(IReadOnlyCollection<Guid> guids)
+        public IReadOnlyList<TrackRecord> GetMany(IReadOnlyCollection<Guid> ids)
         {
-            throw new NotImplementedException();
+            using var command = _connection.CreateCommand();
+
+            var parameters = ids.Select((id, i) => new { id, name = $"id{i}" }).ToList();
+            string sql_params = string.Join(", ", parameters.Select(x => x.name));
+
+            command.CommandText = $"select * from Track where TrackId in ({sql_params})";
+
+            foreach (var parameter in parameters)
+            {
+                command.Parameters.AddWithValue(parameter.name, parameter.id.ToString());
+            }
+
+            List<TrackRecord> result = [];
+
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var model = SerializeSchema(reader);
+
+                if (model != null)
+                {
+                    result.Add(model);
+                }
+            }
+
+            return result;
+        }
+
+        private static TrackRecord SerializeSchema(DbDataReader reader)
+        {
+            return new TrackRecord
+            {
+                TrackId = Guid.Parse(reader["TrackId"].ToString()!),
+
+                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(int.Parse(reader["CreatedAt"].ToString()!)).DateTime,
+
+                UpdatedAt = DateTimeOffset.FromUnixTimeSeconds(int.Parse(reader["UpdatedAt"].ToString()!)).DateTime,
+
+                Title = (string)reader["Title"],
+
+                Artist = (string)reader["Artist"],
+
+                FilePath = (string)reader["FilePath"],
+
+                Cover = reader["Cover"] is DBNull ? null : (byte[])reader["Cover"],
+
+                Album = reader["Album"].ToString(),
+
+                AlbumArtist = reader["AlbumArtist"].ToString(),
+
+                Duration = TimeSpan.FromSeconds(int.Parse(reader["Duration"].ToString()!)),
+
+                Genres = JsonSerializer.Deserialize<string[]>(reader["Genres"].ToString()!)!,
+
+                Year = reader["Year"] is DBNull ? null : int.Parse(reader["Year"].ToString()!),
+
+                TrackNumber = reader["TrackNumber"] is DBNull ? null : int.Parse(reader["TrackNumber"].ToString()!),
+
+                DiscNumber = reader["DiscNumber"] is DBNull ? null : int.Parse(reader["DiscNumber"].ToString()!),
+            };
         }
     }
 }
