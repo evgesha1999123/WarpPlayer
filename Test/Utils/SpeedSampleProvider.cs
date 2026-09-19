@@ -1,11 +1,8 @@
 ﻿using NAudio.Wave;
 using System;
-using System.Diagnostics;
-using System.DirectoryServices;
-using System.Runtime.CompilerServices;
 
 
-namespace Test.Service
+namespace Test.Utils
 {
     public class SpeedSampleProvider : ISampleProvider
     {

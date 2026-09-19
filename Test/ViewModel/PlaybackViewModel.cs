@@ -144,27 +144,13 @@ namespace Test.ViewModel
         [RelayCommand]
         public void NextTrack()
         {
-            var random = new Random();
-            double min = 50;
-            double max = 500;
-            
-            var record = trackRepository.Create(
-                new Track
-                {
-                    Title = "abc",
-                    Artist = "some artist",
-                    FilePath = "C:/user",
-                    Duration = TimeSpan.FromSeconds(random.NextDouble() * (max - min) + min)
-                }
-            );
-
-            Debug.WriteLine($"created record: {ModelInspector.GetDumpOfObject(record)}");
+           //...
         }
 
         [RelayCommand]
         public void PreviousTrack()
         {
-            trackRepository.DeleteAll();
+            //..
         }
 
         [RelayCommand]
