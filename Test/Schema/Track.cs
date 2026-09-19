@@ -8,10 +8,10 @@ namespace Test.Schema
         public required string Title { get; set; }
         public required string Artist { get; set; }
         public required string FilePath { get; set; }
+        public required TimeSpan Duration { get; set; }
         public byte[]? Cover { get; set; }
         public string? Album { get; set; }
         public string? AlbumArtist { get; set; }
-        public TimeSpan Duration { get; set; }
         public string[] Genres { get; set; } = [];
         public int? Year { get; set; }
         public int? TrackNumber { get; set; }

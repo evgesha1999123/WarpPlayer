@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using Test.Database;
@@ -29,6 +30,7 @@ namespace Test.Repo
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
+            Debug.WriteLine(connection.ConnectionString);
 
             using var command = connection.CreateCommand();
             command.CommandText = GetCreateSql();

@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
+using System.Windows.Forms.VisualStyles;
 using Test.Database;
 using Test.Repo;
 using Test.Schema;
+using Test.Service;
 using Test.ViewModel;
+using Windows.Media.Playlists;
 
 
 namespace Test
@@ -33,10 +36,13 @@ namespace Test
 
         private void ConfigureServices(ServiceCollection services)
         {
-            services.AddSingleton<ISqliteConnectionFactory>(_ => new SqliteConnectionFactory("@C:\\Users\\evges\\source\\repos\\Test\\Test\\playlist.db"));
+            services.AddSingleton<ISqliteConnectionFactory>(_ => new SqliteConnectionFactory(@"C:/Users/evges/source/repos/Test/Test/playlist.db"));
             services.AddSingleton<ITrackRepository<Track, TrackRecord>, TrackRepository>();
+            services.AddSingleton<PlaybackService>();
 
             services.AddTransient<PlaybackViewModel>();
+
+            services.AddTransient<MainWindow>();
         }
 
         /// <summary>
@@ -45,7 +51,7 @@ namespace Test
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            _window = new MainWindow();
+            _window = Services.GetRequiredService<MainWindow>();
             _window.Activate();
         }
     }

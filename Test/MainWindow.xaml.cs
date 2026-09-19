@@ -28,13 +28,11 @@ namespace Test
     public sealed partial class MainWindow : Window
     {
         public PlaybackViewModel PlaybackVM { get; }
-        public MainWindow()
+        public MainWindow(PlaybackViewModel playbackVM)
         {
             InitializeComponent();
 
-            var playbackService = new PlaybackService();
-
-            PlaybackVM = new PlaybackViewModel(playbackService);
+            PlaybackVM = playbackVM;
         }
 
         private void PlaybackSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)

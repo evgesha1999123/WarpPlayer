@@ -1,10 +1,14 @@
-﻿using Test.Service;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.WindowsAppSDK.Runtime.Packages;
 using System;
 using System.Diagnostics;
+using Test.Repo;
+using Test.Schema;
+using Test.Service;
+using Test.Utils;
 
 namespace Test.ViewModel
 {
@@ -44,15 +48,17 @@ namespace Test.ViewModel
         }
 
         private readonly PlaybackService _playbackService;
+        private readonly ITrackRepository<Track, TrackRecord> trackRepository;
 
         private bool CanStartPlayback { get => PlaybackState == PlaybackState.Init || PlaybackState == PlaybackState.Stopped || PlaybackState == PlaybackState.Paused; }
         private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
         private readonly DispatcherQueueTimer _timer;
 
 
-        public PlaybackViewModel(PlaybackService playbackService)
+        public PlaybackViewModel(PlaybackService playbackService, ITrackRepository<Track, TrackRecord> trackRepository)
         {
             _playbackService = playbackService;
+            this.trackRepository = trackRepository;
 
             ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
@@ -134,6 +140,32 @@ namespace Test.ViewModel
             _playbackService.Rewind(delta);
 
             OnPropertyChanged(nameof(CurrentPlaybackTime));
+        }
+
+        [RelayCommand]
+        public void NextTrack()
+        {
+            var random = new Random();
+            double min = 50;
+            double max = 500;
+            
+            var record = trackRepository.Create(
+                new Track
+                {
+                    Title = "abc",
+                    Artist = "some artist",
+                    FilePath = "C:/user",
+                    Duration = TimeSpan.FromSeconds(random.NextDouble() * (max - min) + min)
+                }
+            );
+
+            Debug.WriteLine($"created record: {ModelInspector.GetDumpOfObject(record)}");
+        }
+
+        [RelayCommand]
+        public void PreviousTrack()
+        {
+            trackRepository.DeleteAll();
         }
 
         [RelayCommand]
