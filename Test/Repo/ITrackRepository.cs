@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 
 
-namespace Test.Database.Repo
+namespace Test.Repo
 {
-    public interface IFileRepository<TFile, TRecord> where TRecord: TFile
+    public interface ITrackRepository<TFile, TRecord> where TRecord: TFile
     {
         public TRecord Get(Guid id);
         public IReadOnlyList<TRecord> GetMany(IReadOnlyCollection<Guid> guids);

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 
-namespace Test.Database.Repo
+namespace Test.Repo
 {
     public interface IPlaylistRepository<TPlaylist, TRecord> where TRecord: TPlaylist
     {

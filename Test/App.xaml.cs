@@ -1,23 +1,11 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using Test.Database;
+using Test.Repo;
+using Test.Schema;
+using Test.ViewModel;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace Test
 {
@@ -26,6 +14,7 @@ namespace Test
     /// </summary>
     public partial class App : Application
     {
+        public IServiceProvider Services { get; }
         private Window? _window;
 
         /// <summary>
@@ -35,6 +24,19 @@ namespace Test
         public App()
         {
             InitializeComponent();
+
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+
+            Services = services.BuildServiceProvider();
+        }
+
+        private void ConfigureServices(ServiceCollection services)
+        {
+            services.AddSingleton<ISqliteConnectionFactory>(_ => new SqliteConnectionFactory("@C:\\Users\\evges\\source\\repos\\Test\\Test\\playlist.db"));
+            services.AddSingleton<ITrackRepository<Track, TrackRecord>, TrackRepository>();
+
+            services.AddTransient<PlaybackViewModel>();
         }
 
         /// <summary>
