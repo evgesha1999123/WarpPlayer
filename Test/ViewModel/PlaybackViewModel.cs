@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.WindowsAppSDK.Runtime.Packages;
 using System;
 using System.Diagnostics;
 using Test.Repo;
