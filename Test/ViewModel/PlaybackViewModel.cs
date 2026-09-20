@@ -47,17 +47,19 @@ namespace Test.ViewModel
         }
 
         private readonly PlaybackService _playbackService;
-        private readonly ITrackRepository<Track, TrackRecord> trackRepository;
+        private readonly MediaLibraryService _mediaLibraryService;
+        private readonly PlaybackQueue _playbackQueue;
 
         private bool CanStartPlayback { get => PlaybackState == PlaybackState.Init || PlaybackState == PlaybackState.Stopped || PlaybackState == PlaybackState.Paused; }
         private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
         private readonly DispatcherQueueTimer _timer;
 
 
-        public PlaybackViewModel(PlaybackService playbackService, ITrackRepository<Track, TrackRecord> trackRepository)
+        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue)
         {
             _playbackService = playbackService;
-            this.trackRepository = trackRepository;
+            _mediaLibraryService = mediaLibraryService;
+            _playbackQueue = playbackQueue;
 
             ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
@@ -67,6 +69,8 @@ namespace Test.ViewModel
 
             // Then, subscribe timer tick event
             _timer.Tick += PlaybackTimer_Tick;
+            _mediaLibraryService = mediaLibraryService;
+            _playbackQueue = playbackQueue;
         }
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)

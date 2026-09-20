@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Test.Repo;
 using Test.Schema;
 using Test.Utils;
@@ -18,44 +19,61 @@ namespace Test.Service
             _databaseHealthChecker = dbHealthChecker;
         }
 
-        public PlaylistRecord CreatePlaylist(Playlist playlist)
+        //public PlaylistRecord CreatePlaylist(Playlist playlist)
+        //{
+        //    //...
+        //}
+
+        //public PlaylistRecord GetPlaylist(string id)
+        //{
+        //    //...
+        //}
+
+        //public IReadOnlyList<PlaylistRecord> GetAllPlaylists()
+        //{
+        //    //...
+        //}
+
+        public TrackRecord ImportTrack(string filePath)
         {
-            //...
+            var track = _fileLoader.GetTrackData(filePath);
+            return _trackRepository.Create(track);
+
         }
 
-        public PlaylistRecord GetPlaylist(string id)
+        public IReadOnlyList<TrackRecord> ImportTracks(List<string> filePaths)
         {
-            //...
+            List<Track> tracks = [];
+
+            foreach (var path in filePaths)
+            {
+                var track = _fileLoader.GetTrackData(path);
+                tracks.Add(track);
+            }
+
+            return _trackRepository.CreateMany(tracks);
         }
 
-        public IReadOnlyList<PlaylistRecord> GetAllPlaylists()
+        public bool DeleteTrack(string id)
         {
-            //...
+            return _trackRepository.Delete(Guid.Parse(id));
         }
 
-        public TrackRecord ImportTrack(Track track)
+        public void DeleteTracks(List<string> ids) 
         {
-            //...
-        }
+            List<Guid> guids = [];
 
-        public IReadOnlyList<TrackRecord> ImportTracks(List<Track> tracks)
-        {
-            //...
-        }
+            foreach (var id in ids)
+            {
+                guids.Add(Guid.Parse(id));
+            }
 
-        public bool DeleteTrack()
-        {
-            //...
-        }
-
-        public void DeleteTracks() 
-        { 
-            //...
+            _trackRepository.DeleteMany(guids);
         }
 
         public void DeleteAllTracks()
         {
-            //...
+            _trackRepository.DeleteAll();
         }
 
     }

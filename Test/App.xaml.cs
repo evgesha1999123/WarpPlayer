@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
+using System.Collections.Generic;
 using System.Windows.Forms.VisualStyles;
 using Test.Database;
 using Test.Repo;
 using Test.Schema;
 using Test.Service;
+using Test.Utils;
 using Test.ViewModel;
 using Windows.Media.Playlists;
 
@@ -38,7 +40,14 @@ namespace Test
         {
             services.AddSingleton<ISqliteConnectionFactory>(_ => new SqliteConnectionFactory(@"C:/Users/evges/source/repos/Test/Test/playlist.db"));
             services.AddSingleton<ITrackRepository<Track, TrackRecord>, TrackRepository>();
+
             services.AddSingleton<PlaybackService>();
+
+            services.AddSingleton<FileLoader>();
+            services.AddSingleton<DatabaseHealthChecker>();
+            services.AddSingleton<PlaybackQueue>();
+
+            services.AddSingleton<MediaLibraryService>();
 
             services.AddTransient<PlaybackViewModel>();
 
