@@ -73,9 +73,6 @@ namespace Test.Service
 
             _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider());
 
-            Debug.WriteLine($"Hello from Playback. Now playing: '{filePath}'");
-            Debug.WriteLine($"Track Length: '{_audioFileReader.TotalTime}'");
-
             _speedSampleProvider.Speed = PlaybackSpeed;
 
             _outputDevice.Init(_speedSampleProvider);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Test.Repo;
 using Test.Schema;
 using Test.Utils;
@@ -17,6 +18,8 @@ namespace Test.Service
             _fileLoader = fileLoader;
             _trackRepository = trackRepository;
             _databaseHealthChecker = dbHealthChecker;
+
+            _databaseHealthChecker.CheckTablesExists();
         }
 
         //public PlaylistRecord CreatePlaylist(Playlist playlist)
@@ -36,21 +39,14 @@ namespace Test.Service
 
         public TrackRecord ImportTrack(string filePath)
         {
-            var track = _fileLoader.GetTrackData(filePath);
+            var track = _fileLoader.LoadFromFile(filePath);
             return _trackRepository.Create(track);
 
         }
 
-        public IReadOnlyList<TrackRecord> ImportTracks(List<string> filePaths)
+        public IReadOnlyList<TrackRecord> ImportTracks(string folder)
         {
-            List<Track> tracks = [];
-
-            foreach (var path in filePaths)
-            {
-                var track = _fileLoader.GetTrackData(path);
-                tracks.Add(track);
-            }
-
+            var tracks = _fileLoader.LoadFromFolder(folder);
             return _trackRepository.CreateMany(tracks);
         }
 

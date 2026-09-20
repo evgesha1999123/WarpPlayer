@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using Test.Database;
 using Test.Schema;
+using Test.Utils;
 
 
 namespace Test.Repo
@@ -30,7 +31,6 @@ namespace Test.Repo
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
-            Debug.WriteLine(connection.ConnectionString);
 
             using var command = connection.CreateCommand();
             command.CommandText = GetCreateSql();
@@ -166,6 +166,7 @@ namespace Test.Repo
 
                 var trackIdentity = GenerateTrackIdentity();
                 PutParametersToCommand(file, trackIdentity, command);
+
                 command.ExecuteNonQuery();
                 result.Add(BuildTrackRecordFrom(file, trackIdentity));
             }

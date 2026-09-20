@@ -53,6 +53,15 @@
                 VerticalAlignment="Center" />
         </Grid>
 
+        <Grid Padding="0,20,20,0">
+            <Border 
+                HorizontalAlignment="Right">
+                <Button Command="{x:Bind PlaybackVM.SelectFolderCommand}">
+                    <SymbolIcon Symbol="Folder" />
+                </Button>
+            </Border>
+        </Grid>
+
         <!-- Слайдер воспроизведения -->
         <Slider
             x:Name="PlaybackSlider"

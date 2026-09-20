@@ -49,13 +49,14 @@ namespace Test.ViewModel
         private readonly PlaybackService _playbackService;
         private readonly MediaLibraryService _mediaLibraryService;
         private readonly PlaybackQueue _playbackQueue;
+        private readonly FolderPicker _folderPicker;
 
         private bool CanStartPlayback { get => PlaybackState == PlaybackState.Init || PlaybackState == PlaybackState.Stopped || PlaybackState == PlaybackState.Paused; }
         private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
         private readonly DispatcherQueueTimer _timer;
 
 
-        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue)
+        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FolderPicker folderPicker)
         {
             _playbackService = playbackService;
             _mediaLibraryService = mediaLibraryService;
@@ -71,6 +72,7 @@ namespace Test.ViewModel
             _timer.Tick += PlaybackTimer_Tick;
             _mediaLibraryService = mediaLibraryService;
             _playbackQueue = playbackQueue;
+            _folderPicker = folderPicker;
         }
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
@@ -174,6 +176,17 @@ namespace Test.ViewModel
             PlaybackSpeed = speed;
             OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds));
             OnPropertyChanged(nameof(TrackDurationUI));
+        }
+
+        [RelayCommand]
+        public async void SelectFolder()
+        {
+            var folder = await _folderPicker.PickFolderAsync();
+
+            if (folder != null)
+            {
+                var tracks = _mediaLibraryService.ImportTracks(folder);
+            }
         }
     }
 }
