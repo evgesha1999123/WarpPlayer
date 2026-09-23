@@ -1,9 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Test.Repo;
 using Test.Schema;
 using Test.Service;
@@ -55,6 +57,28 @@ namespace Test.ViewModel
         private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
         private readonly DispatcherQueueTimer _timer;
 
+        public PlaylistViewModel PlaylistVM;
+
+        public Symbol PlaylistButtonIcon
+        {
+            get
+            {
+                return PlaylistVisibility == Visibility.Visible ? Symbol.ClosePane : Symbol.OpenPane;
+            }
+        }
+        public Visibility PlaylistVisibility
+        {
+            get
+            {
+                return PlaylistVM.Visibility;
+            }
+
+            set
+            {
+                PlaylistVM.Visibility = value;
+            }
+        }
+
 
         public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FolderPicker folderPicker)
         {
@@ -65,14 +89,16 @@ namespace Test.ViewModel
             ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
 
-            _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-            _timer.Interval = TimeSpan.FromSeconds(0.3f);
-
-            // Then, subscribe timer tick event
-            _timer.Tick += PlaybackTimer_Tick;
             _mediaLibraryService = mediaLibraryService;
             _playbackQueue = playbackQueue;
             _folderPicker = folderPicker;
+
+            PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed);
+
+            // Then, subscribe timer tick event
+            _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(0.3f);
+            _timer.Tick += PlaybackTimer_Tick;
         }
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
@@ -179,14 +205,30 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
-        public async void SelectFolder()
+        public async Task SelectFolder()
         {
             var folder = await _folderPicker.PickFolderAsync();
 
-            if (folder != null)
+            if (folder == null)
             {
-                var tracks = _mediaLibraryService.ImportTracks(folder);
+                return;
             }
+
+            var tracks = _mediaLibraryService.ImportTracks(folder);
+
+            foreach (var track in tracks)
+            {
+                _playbackQueue.Add(track);
+            }
+        }
+
+        [RelayCommand]
+        public void ShowHidePlaylist()
+        {
+            PlaylistVisibility = PlaylistVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            Debug.WriteLine($"PlaylistVisible: {PlaylistVisibility}");
+            OnPropertyChanged(nameof(PlaylistButtonIcon));
+            OnPropertyChanged(nameof(PlaylistVisibility));
         }
     }
 }
