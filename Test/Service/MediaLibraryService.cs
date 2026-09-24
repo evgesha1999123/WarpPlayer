@@ -37,6 +37,11 @@ namespace Test.Service
         //    //...
         //}
 
+        public IReadOnlyList<TrackRecord> LookupLibrary()
+        {
+            return _trackRepository.GetAll();
+        }
+
         public TrackRecord ImportTrack(string filePath)
         {
             var track = _fileLoader.LoadFromFile(filePath);

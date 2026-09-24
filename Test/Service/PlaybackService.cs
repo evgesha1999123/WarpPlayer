@@ -1,6 +1,7 @@
 ﻿using NAudio.Wave;
 using System;
 using System.Diagnostics;
+using Test.Schema;
 using Test.Utils;
 
 
@@ -36,10 +37,10 @@ namespace Test.Service
         public double CurrentPlaybackTime => _audioFileReader.CurrentTime.TotalSeconds / PlaybackSpeed;
         public double TotalPlaybackDuration => _audioFileReader.TotalTime.TotalSeconds / PlaybackSpeed;
 
-        private readonly SpeedSampleProvider _speedSampleProvider;
+        private SpeedSampleProvider _speedSampleProvider;
 
         private readonly WaveOutEvent _outputDevice;
-        private readonly AudioFileReader _audioFileReader;
+        private AudioFileReader _audioFileReader;
 
         private PlaybackState _playbackState = PlaybackState.Init;
 
@@ -77,6 +78,20 @@ namespace Test.Service
 
             _outputDevice.Init(_speedSampleProvider);
         }
+
+        public void ResetAndPlay(string filePath)
+        {
+            Stop();
+
+            _audioFileReader.Dispose();
+            _audioFileReader = new AudioFileReader(filePath);
+            _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider());
+            _speedSampleProvider.Speed = PlaybackSpeed;
+            _outputDevice.Init(_speedSampleProvider);
+
+            Play();
+        }
+
         public void Play()
         {
             if (CanStartPlaypack)

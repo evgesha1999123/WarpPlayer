@@ -14,32 +14,14 @@
             VerticalScrollBarVisibility="Auto"
             HorizontalScrollBarVisibility="Disabled">
 
-            <StackPanel>
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-                <views:TrackView />
-            </StackPanel>
+			<ItemsRepeater ItemsSource="{Binding Tracks}">
+				<ItemsRepeater.ItemTemplate>
+					<DataTemplate>
+						<views:TrackView/>
+					</DataTemplate>
+				</ItemsRepeater.ItemTemplate>
+				
+			</ItemsRepeater>
 
         </ScrollViewer>
 

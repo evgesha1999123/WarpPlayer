@@ -5,11 +5,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Test.Repo;
-using Test.Schema;
 using Test.Service;
 using Test.Utils;
 
@@ -95,7 +92,7 @@ namespace Test.ViewModel
             _playbackQueue = playbackQueue;
             _folderPicker = folderPicker;
 
-            PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed);
+            PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, _playbackService);
 
             // Then, subscribe timer tick event
             _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
@@ -228,6 +225,7 @@ namespace Test.ViewModel
             foreach (var track in tracks)
             {
                 _playbackQueue.Add(track);
+                PlaylistVM.AddTrack(track);
             }
         }
 
@@ -235,7 +233,6 @@ namespace Test.ViewModel
         public void ShowHidePlaylist()
         {
             PlaylistVisibility = PlaylistVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
-            Debug.WriteLine($"PlaylistVisible: {PlaylistVisibility}");
             OnPropertyChanged(nameof(PlaylistButtonIcon), nameof(PlaylistVisibility));
         }
     }

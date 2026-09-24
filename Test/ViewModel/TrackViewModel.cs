@@ -1,13 +1,49 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CommunityToolkit.Mvvm.Input;
+using System;
+using System.Diagnostics;
+using Test.Schema;
+
 
 namespace Test.ViewModel
 {
-    public class TrackViewModel
+    public partial class TrackViewModel
     {
+        public string Title { get; set; }
+        public string Artist { get; set; }
+        public Guid Id { get; init; }
+        public string? Album { get; set; }
+        public TimeSpan Duration { get; set; }
 
+        public TrackRecord Trecord;
+
+        private readonly Action<string> _play;
+        private readonly Action<TrackViewModel> _remove;
+
+
+        public TrackViewModel(TrackRecord track, Action<string> play, Action<TrackViewModel> remove)
+        {
+            Title = track.Title;
+            Artist = track.Artist ?? "";
+            Id = track.TrackId;
+            Album = track.Album;
+            Duration = track.Duration;
+
+            Trecord = track;
+
+            _play = play;
+            _remove = remove;
+        }
+
+        [RelayCommand]
+        public void Play()
+        {
+            _play(Trecord.FilePath);
+        }
+
+        [RelayCommand]
+        public void Remove()
+        {
+            _remove(this);
+        }
     }
 }
