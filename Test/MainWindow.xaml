@@ -78,11 +78,12 @@
 
         </Grid>
 
-
+        
         <!-- Основная область -->
         <Grid Grid.Row="1">
 
-            <!-- Текст всегда центрируется относительно ВСЕЙ основной области -->
+
+            <!-- Основной контент -->
             <TextBlock
                 Text="Artist — Track Name"
                 FontSize="24"
@@ -92,13 +93,25 @@
                 TextWrapping="Wrap"
                 Margin="20,0" />
 
-            <!-- Плейлист поверх основной области -->
-            <views:PlaylistView
+            <!-- Плейлист -->
+            <Grid
                 HorizontalAlignment="Right"
                 VerticalAlignment="Stretch"
-                Width="350"
-                Visibility="{x:Bind PlaybackVM.PlaylistVisibility, Mode=OneWay}"
-                DataContext="{x:Bind PlaybackVM.PlaylistVM, Mode=OneWay}" />
+                Margin="0,8,15,0">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <views:PlaylistView
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    MaxWidth="350"
+                    MinWidth="100"
+                    Visibility="{x:Bind PlaybackVM.PlaylistVisibility, Mode=OneWay}"
+                    DataContext="{x:Bind PlaybackVM.PlaylistVM, Mode=OneWay}" />
+
+            </Grid>
 
         </Grid>
 

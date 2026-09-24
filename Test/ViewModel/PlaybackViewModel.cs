@@ -4,7 +4,9 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Test.Repo;
 using Test.Schema;
@@ -101,6 +103,20 @@ namespace Test.ViewModel
             _timer.Tick += PlaybackTimer_Tick;
         }
 
+        new protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected void OnPropertyChanged(string propertyName, params string[] propertyNames)
+        {
+            OnPropertyChanged(propertyName);
+            foreach (var name in propertyNames)
+            {
+                OnPropertyChanged(name);
+            }
+        }
+
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
         {
             IsUpdatingSlider = true;
@@ -110,8 +126,7 @@ namespace Test.ViewModel
                 Stop();
             }
 
-            OnPropertyChanged(nameof(CurrentPlaybackTime));
-            OnPropertyChanged(nameof(CurrentTrackPositionUI));
+            OnPropertyChanged(nameof(CurrentPlaybackTime), nameof(CurrentTrackPositionUI));
 
             IsUpdatingSlider = false;
         }
@@ -137,8 +152,7 @@ namespace Test.ViewModel
 
             _timer.Start();
 
-            OnPropertyChanged(nameof(PlaybackState));
-            OnPropertyChanged(nameof(PlayPauseIcon));
+            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon));
         }
 
         [RelayCommand]
@@ -148,8 +162,7 @@ namespace Test.ViewModel
 
             _timer.Stop();
 
-            OnPropertyChanged(nameof(PlaybackState));
-            OnPropertyChanged(nameof(PlayPauseIcon));
+            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon));
         }
 
         [RelayCommand]
@@ -159,10 +172,7 @@ namespace Test.ViewModel
 
             _timer.Stop();
 
-            OnPropertyChanged(nameof(PlaybackState));
-            OnPropertyChanged(nameof(PlayPauseIcon));
-
-            OnPropertyChanged(nameof(CurrentPlaybackTime));
+            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon), nameof(CurrentPlaybackTime));
         }
 
         [RelayCommand]
@@ -200,8 +210,7 @@ namespace Test.ViewModel
         public void SetSpeed(float speed)
         {
             PlaybackSpeed = speed;
-            OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds));
-            OnPropertyChanged(nameof(TrackDurationUI));
+            OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds), nameof(TrackDurationUI));
         }
 
         [RelayCommand]
@@ -227,8 +236,7 @@ namespace Test.ViewModel
         {
             PlaylistVisibility = PlaylistVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
             Debug.WriteLine($"PlaylistVisible: {PlaylistVisibility}");
-            OnPropertyChanged(nameof(PlaylistButtonIcon));
-            OnPropertyChanged(nameof(PlaylistVisibility));
+            OnPropertyChanged(nameof(PlaylistButtonIcon), nameof(PlaylistVisibility));
         }
     }
 }
