@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Test.Service;
@@ -146,7 +147,6 @@ namespace Test.ViewModel
         public void Play()
         {
             _playbackService.Play();
-
             _timer.Start();
 
             OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon));
@@ -156,7 +156,6 @@ namespace Test.ViewModel
         public void Pause()
         {
             _playbackService.Pause();
-
             _timer.Stop();
 
             OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon));
@@ -166,18 +165,23 @@ namespace Test.ViewModel
         public void Stop()
         {
             _playbackService.Stop();
-
             _timer.Stop();
 
-            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon), nameof(CurrentPlaybackTime));
+            OnPropertyChanged(
+                nameof(PlaybackState),
+                nameof(PlayPauseIcon), 
+                nameof(CurrentPlaybackTime),
+                nameof(CurrentTrackPositionUI)
+            );
         }
 
         [RelayCommand]
         public void Rewind(int delta)
         {
+            IsUpdatingSlider = true;
             _playbackService.Rewind(delta);
-
             OnPropertyChanged(nameof(CurrentPlaybackTime));
+            IsUpdatingSlider = false;
         }
 
         [RelayCommand]
