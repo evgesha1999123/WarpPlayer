@@ -224,7 +224,6 @@ namespace Test.ViewModel
 
             foreach (var track in tracks)
             {
-                _playbackQueue.Add(track);
                 PlaylistVM.AddTrack(track);
             }
         }

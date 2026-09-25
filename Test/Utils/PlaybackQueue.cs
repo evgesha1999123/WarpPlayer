@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Test.Schema;
 
 
@@ -8,87 +9,42 @@ namespace Test.Utils
     {
         private readonly List<TrackRecord> _queue = [];
         private int _currentIndex = 0;
-        public int Size = 0;
+        public int Size => _queue.Count;
 
-        public PlaybackQueue()
-        {
+        public readonly int NextTrackIndexDelta = +1;
+        public readonly int PrevTrackIndexDelta = -1;
 
-        }
+        private bool IsLast { get => _currentIndex == Size - 1; }
+        private bool IsFirst { get => _currentIndex == 0; }
+        private bool HasNext { get => !IsLast; }
+        private bool HasPrevious { get => !IsFirst; }
+        private bool HasTracks { get => _queue.Count > 0; }
 
         public void Add(TrackRecord track)
         {
             _queue.Add(track);
-            Size++;
         }
 
         public void Delete(TrackRecord track)
         {
             _queue.Remove(track);
-            Size--;
         }
 
-        public TrackRecord? GetNext()
+        public TrackRecord? Move(int delta)
         {
-            if (HasTracks())
-            {
-                var track = _queue[_currentIndex];
-
-                if (CanGetNext())
-                {
-                    _currentIndex++;
-                }
-
-                return track;
-            }
-
-            return null;
+            return HasTracks ? MoveAndGetTrack(delta) : null;
         }
 
-        public TrackRecord? GetPrevious()
+        private TrackRecord MoveAndGetTrack(int delta)
         {
-            if (HasTracks())
-            {
-                var track = _queue[_currentIndex];
-
-                if (CanGetPrevious())
-                {
-                    _currentIndex--;
-                }
-
-                return track;
-            }
-
-            return null;
+            bool canMove = (delta < 0) ? HasPrevious : HasNext;
+            _currentIndex = canMove ? _currentIndex + delta : _currentIndex;
+            return _queue[_currentIndex];
         }
 
-        public List<TrackRecord> DisplayQueue()
+        public IReadOnlyList<TrackRecord> DisplayQueue()
         {
             return _queue;
-        }
-
-        private bool IsLast()
-        {
-            return _currentIndex == Size;
-        }
-
-        private bool IsFirst()
-        {
-            return _currentIndex == 0;
-        }
-
-        private bool CanGetNext()
-        {
-            return (!IsLast());
-        }
-
-        private bool CanGetPrevious()
-        {
-            return(!IsFirst());
-        }
-
-        private bool HasTracks()
-        {
-            return Size != 0;
         }
     }
 }
