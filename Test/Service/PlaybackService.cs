@@ -10,6 +10,7 @@ namespace Test.Service
     public enum PlaybackState
     {
         Init,
+        Prepared,
         Playing,
         Stopped,
         Paused,
@@ -17,14 +18,18 @@ namespace Test.Service
 
     public class PlaybackService : IPlayable
     {
-        public string FilePath;
+        private readonly WaveOutEvent _outputDevice;
+        private SpeedSampleProvider? _speedSampleProvider;
+        private AudioFileReader? _audioFileReader;
+
+        public bool IsReady => (_speedSampleProvider != null && _audioFileReader != null);
 
         public int ForwardPlaybackRewindDelta { get; private set; } = 9;
         public int BackwardPlaybackRewindDelta { get; private set; } = -9;
 
         public float PlaybackSpeed
         {
-            get => _speedSampleProvider.Speed;
+            get => _speedSampleProvider?.Speed ?? 1f;
             set => _speedSampleProvider.Speed = value;
         }
 
@@ -34,61 +39,32 @@ namespace Test.Service
             private set => _playbackState = value;
         }
 
-        public double CurrentPlaybackTime => _audioFileReader.CurrentTime.TotalSeconds / PlaybackSpeed;
-        public double TotalPlaybackDuration => _audioFileReader.TotalTime.TotalSeconds / PlaybackSpeed;
-
-        private SpeedSampleProvider _speedSampleProvider;
-
-        private readonly WaveOutEvent _outputDevice;
-        private AudioFileReader _audioFileReader;
+        public double CurrentPlaybackTime => _audioFileReader != null ? _audioFileReader.CurrentTime.TotalSeconds / PlaybackSpeed : 0;
+        public double TotalPlaybackDuration => _audioFileReader != null ? _audioFileReader.TotalTime.TotalSeconds / PlaybackSpeed : 0;
 
         private PlaybackState _playbackState = PlaybackState.Init;
+        private bool CanStartPlaypack => _audioFileReader != null && PlaybackState != PlaybackState.Playing;
+        private bool CanStopPlaypack => _audioFileReader != null && PlaybackState is not (PlaybackState.Stopped or PlaybackState.Init);
+        private bool CanPausePlayback => _audioFileReader != null && PlaybackState == PlaybackState.Playing;
 
-        private bool CanStartPlaypack { 
-            get
-            {
-                return _audioFileReader != null && PlaybackState != PlaybackState.Playing;
-            }
-        }
-
-        private bool CanStopPlaypack { 
-            get
-            {
-                return _audioFileReader != null && PlaybackState is not (PlaybackState.Stopped or PlaybackState.Init);
-            } 
-        }
-
-        private bool CanPausePlayback { 
-            get
-            {
-                return _audioFileReader != null && PlaybackState == PlaybackState.Playing;
-            } 
-        }
-
-        public PlaybackService(String filePath = @"C:\Users\evges\source\repos\Test\Test\три дня дождя - демоны slowed + reverb - gloomy tears.mp3")
+        public PlaybackService()
         {
-            FilePath = filePath;
-
-            _audioFileReader = new AudioFileReader(filePath);
             _outputDevice = new WaveOutEvent();
+        }
 
+        public void Init(string filePath)
+        {
+            _audioFileReader = new AudioFileReader(filePath);
             _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider());
-
             _speedSampleProvider.Speed = PlaybackSpeed;
-
             _outputDevice.Init(_speedSampleProvider);
         }
 
         public void ResetAndPlay(string filePath)
         {
             Stop();
-
-            _audioFileReader.Dispose();
-            _audioFileReader = new AudioFileReader(filePath);
-            _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider());
-            _speedSampleProvider.Speed = PlaybackSpeed;
-            _outputDevice.Init(_speedSampleProvider);
-
+            _audioFileReader?.Dispose();
+            Init(filePath);
             Play();
         }
 
@@ -112,6 +88,11 @@ namespace Test.Service
 
         public void Rewind(double delta)
         {
+            if (_audioFileReader == null)
+            {
+                return;
+            }
+
             bool wasPlaying = PlaybackState == PlaybackState.Playing;
 
             if (wasPlaying) 
@@ -133,6 +114,11 @@ namespace Test.Service
 
         public void Stop()
         {
+            if (_audioFileReader == null)
+            {
+                return;
+            }
+
             if (CanStopPlaypack)
             {
                 _outputDevice.Stop();
@@ -143,6 +129,11 @@ namespace Test.Service
 
         public void Seek(double seconds)
         {
+            if (_audioFileReader == null)
+            {
+                return;
+            }
+
             double sourceSeconds = seconds * PlaybackSpeed;
             sourceSeconds = Math.Clamp(sourceSeconds, 0, _audioFileReader.TotalTime.TotalSeconds);
             _audioFileReader.CurrentTime = TimeSpan.FromSeconds(sourceSeconds);

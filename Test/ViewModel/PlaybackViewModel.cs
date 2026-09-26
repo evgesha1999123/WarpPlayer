@@ -15,26 +15,18 @@ namespace Test.ViewModel
 {
     public partial class PlaybackViewModel : ObservableObject
     {
-        public string FilePath => _playbackService.FilePath;
-
         public int ForwardPlaybackRewindDelta { get; }
         public int BackwardPlaybackRewindDelta { get; }
 
         public bool IsUpdatingSlider = false;
-
-        public PlaybackState PlaybackState
+        public PlaybackState PlaybackState => _playbackService.PlaybackState;
+        public Symbol PlayPauseIcon => PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
+        public Symbol PlaylistButtonIcon => PlaylistVisibility == Visibility.Visible ? Symbol.ClosePane : Symbol.OpenPane;
+        public Visibility PlaylistVisibility
         {
-            get => _playbackService.PlaybackState;
+            get => PlaylistVM.Visibility;
+            set => PlaylistVM.Visibility = value;
         }
-
-        public Symbol PlayPauseIcon
-        {
-            get
-            {
-                return PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
-            }
-        }
-
         public double CurrentPlaybackTime => _playbackService.CurrentPlaybackTime;
         public double TotalTrackLenSeconds => _playbackService.TotalPlaybackDuration;
         public int DisplayTotalTrackLenSeconds => (int)_playbackService.TotalPlaybackDuration;
@@ -52,33 +44,11 @@ namespace Test.ViewModel
         private readonly MediaLibraryService _mediaLibraryService;
         private readonly PlaybackQueue _playbackQueue;
         private readonly FolderPicker _folderPicker;
-
+        private readonly DispatcherQueueTimer _timer;
         private bool CanStartPlayback { get => PlaybackState == PlaybackState.Init || PlaybackState == PlaybackState.Stopped || PlaybackState == PlaybackState.Paused; }
         private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
-        private readonly DispatcherQueueTimer _timer;
 
         public PlaylistViewModel PlaylistVM;
-
-        public Symbol PlaylistButtonIcon
-        {
-            get
-            {
-                return PlaylistVisibility == Visibility.Visible ? Symbol.ClosePane : Symbol.OpenPane;
-            }
-        }
-        public Visibility PlaylistVisibility
-        {
-            get
-            {
-                return PlaylistVM.Visibility;
-            }
-
-            set
-            {
-                PlaylistVM.Visibility = value;
-            }
-        }
-
 
         public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FolderPicker folderPicker)
         {
@@ -93,11 +63,17 @@ namespace Test.ViewModel
             _playbackQueue = playbackQueue;
             _folderPicker = folderPicker;
 
+            var existingTracks = _mediaLibraryService.LookupLibrary();
+            if (existingTracks.Count > 0)
+            {
+                _playbackService.Init(existingTracks[0].FilePath);
+            }
+
             PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, _playbackService);
 
-            // Then, subscribe timer tick event
             _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
             _timer.Interval = TimeSpan.FromSeconds(0.3f);
+            // Then, subscribe timer tick event
             _timer.Tick += PlaybackTimer_Tick;
         }
 
@@ -210,6 +186,11 @@ namespace Test.ViewModel
         [RelayCommand]
         public void SetSpeed(float speed)
         {
+            if (!_playbackService.IsReady)
+            {
+                return;
+            }
+
             PlaybackSpeed = speed;
             OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds), nameof(TrackDurationUI));
         }
@@ -226,10 +207,16 @@ namespace Test.ViewModel
 
             var tracks = _mediaLibraryService.ImportTracks(folder);
 
+            if (!_playbackService.IsReady && tracks.Count > 0)
+            {
+                _playbackService.Init(tracks[0].FilePath);
+            }
+
             foreach (var track in tracks)
             {
                 PlaylistVM.AddTrack(track);
             }
+            Debug.WriteLine($"Queue size: {_playbackQueue.Size}");
         }
 
         [RelayCommand]
