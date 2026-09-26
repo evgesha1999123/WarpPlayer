@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Test.Schema;
 using Test.Service;
 using Test.Utils;
 
@@ -30,10 +31,10 @@ namespace Test.ViewModel
         public double CurrentPlaybackTime => _playbackService.CurrentPlaybackTime;
         public double TotalTrackLenSeconds => _playbackService.TotalPlaybackDuration;
         public int DisplayTotalTrackLenSeconds => (int)_playbackService.TotalPlaybackDuration;
+        public string CurrentTrackNameUI => GetCurrentTrackName();
 
         public string CurrentTrackPositionUI => TimeSpan.FromSeconds(_playbackService.CurrentPlaybackTime).ToString(@"mm\:ss");
         public string TrackDurationUI => TimeSpan.FromSeconds(_playbackService.TotalPlaybackDuration).ToString(@"mm\:ss");
-
         public float PlaybackSpeed
         {
             get => _playbackService.PlaybackSpeed;
@@ -69,7 +70,7 @@ namespace Test.ViewModel
                 _playbackService.Init(existingTracks[0].FilePath);
             }
 
-            PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, _playbackService);
+            PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, this);
 
             _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
             _timer.Interval = TimeSpan.FromSeconds(0.3f);
@@ -125,7 +126,7 @@ namespace Test.ViewModel
             _playbackService.Play();
             _timer.Start();
 
-            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon));
+            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon), nameof(CurrentTrackNameUI));
         }
 
         [RelayCommand]
@@ -163,13 +164,39 @@ namespace Test.ViewModel
         [RelayCommand]
         public void NextTrack()
         {
-           //...
+            var track = _playbackQueue.Move(+1);
+            if (track != null)
+            {
+                UpdateUIandPlay(track.FilePath);
+            }
         }
 
         [RelayCommand]
         public void PreviousTrack()
         {
-            //..
+            var track = _playbackQueue.Move(-1);
+            if (track != null)
+            {
+                UpdateUIandPlay(track.FilePath);
+            }
+        }
+
+        public void UpdateUIandPlay(string filePath, bool setIndexOfTrack = false)
+        {
+            var prevSpeed = _playbackService.PlaybackSpeed;
+            _playbackService.ResetAndPlay(filePath);
+            if (!_timer.IsRunning)
+            {
+                _timer.Start();
+            }
+
+            if (setIndexOfTrack)
+            {
+                _playbackQueue.SetCurrent(filePath);
+            }
+
+            OnPropertyChanged(nameof(PlayPauseIcon), nameof(TrackDurationUI), nameof(DisplayTotalTrackLenSeconds), nameof(CurrentTrackNameUI));
+            SetSpeed(prevSpeed);
         }
 
         [RelayCommand]
@@ -206,17 +233,23 @@ namespace Test.ViewModel
             }
 
             var tracks = _mediaLibraryService.ImportTracks(folder);
+            bool isPlaybackServiceInitedNow = false;
 
             if (!_playbackService.IsReady && tracks.Count > 0)
             {
                 _playbackService.Init(tracks[0].FilePath);
+                isPlaybackServiceInitedNow = true;
             }
 
             foreach (var track in tracks)
             {
                 PlaylistVM.AddTrack(track);
             }
-            Debug.WriteLine($"Queue size: {_playbackQueue.Size}");
+
+            if (isPlaybackServiceInitedNow)
+            {
+                OnPropertyChanged(nameof(CurrentTrackNameUI));
+            }
         }
 
         [RelayCommand]
@@ -224,6 +257,12 @@ namespace Test.ViewModel
         {
             PlaylistVisibility = PlaylistVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
             OnPropertyChanged(nameof(PlaylistButtonIcon), nameof(PlaylistVisibility));
+        }
+
+        public string GetCurrentTrackName()
+        {
+            var track = _playbackQueue.GetCurrent();
+            return track != null ? $"{track?.Artist} - {track?.Title}" : " ";
         }
     }
 }

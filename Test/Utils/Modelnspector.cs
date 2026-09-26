@@ -6,7 +6,7 @@ namespace Test.Utils
 {
     public class ModelInspector
     {
-        public static string GetDumpOfObject<T>(T obj)
+        public static string ObjectDump<T>(T obj)
         {
             if (obj is null)
                 return "null";

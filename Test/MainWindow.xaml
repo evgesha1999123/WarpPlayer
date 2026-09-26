@@ -85,7 +85,7 @@
 
             <!-- Основной контент -->
             <TextBlock
-                Text="Artist — Track Name"
+                Text="{x:Bind PlaybackVM.CurrentTrackNameUI, Mode=OneWay}"
                 FontSize="24"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"

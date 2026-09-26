@@ -1,50 +1,94 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Test.Schema;
 
-
-namespace Test.Utils
+public class PlaybackQueue
 {
-    public class PlaybackQueue
+    private readonly List<TrackRecord> _queue = [];
+    private int _currentIndex = -1;
+
+    public int Size => _queue.Count;
+
+    public TrackRecord? GetCurrent()
     {
-        private readonly List<TrackRecord> _queue = [];
-        private int _currentIndex = 0;
-        public int Size => _queue.Count;
+        if (_currentIndex < 0 || _currentIndex >= Size)
+            return null;
 
-        public readonly int NextTrackIndexDelta = +1;
-        public readonly int PrevTrackIndexDelta = -1;
+        return _queue[_currentIndex];
+    }
 
-        private bool IsLast { get => _currentIndex == Size - 1; }
-        private bool IsFirst { get => _currentIndex == 0; }
-        private bool HasNext { get => !IsLast; }
-        private bool HasPrevious { get => !IsFirst; }
-        private bool HasTracks { get => _queue.Count > 0; }
+    public void Add(TrackRecord track)
+    {
+        _queue.Add(track);
 
-        public void Add(TrackRecord track)
+        // Если очередь была пустой,
+        // первый добавленный становится current.
+        if (_currentIndex == -1)
+            _currentIndex = 0;
+    }
+
+    public bool Delete(TrackRecord track)
+    {
+        var index = _queue.IndexOf(track);
+
+        if (index < 0)
+            return false;
+
+        bool deletingCurrent = index == _currentIndex;
+
+        _queue.RemoveAt(index);
+
+        if (Size == 0)
         {
-            _queue.Add(track);
+            _currentIndex = -1;
+            return true;
         }
 
-        public void Delete(TrackRecord track)
+        if (index < _currentIndex)
         {
-            _queue.Remove(track);
+            // Удалили элемент перед current.
+            // Current физически сдвинулся на -1.
+            _currentIndex--;
+        }
+        else if (deletingCurrent)
+        {
+            // Current удалён.
+            // Если есть следующий — индекс остаётся тем же.
+            // Если удалили последний — переходим на предыдущий.
+            if (_currentIndex >= Size)
+                _currentIndex = Size - 1;
         }
 
-        public TrackRecord? Move(int delta)
-        {
-            return HasTracks ? MoveAndGetTrack(delta) : null;
-        }
+        return true;
+    }
 
-        private TrackRecord MoveAndGetTrack(int delta)
-        {
-            bool canMove = (delta < 0) ? HasPrevious : HasNext;
-            _currentIndex = canMove ? _currentIndex + delta : _currentIndex;
+    public TrackRecord? Move(int delta)
+    {
+        if (Size == 0)
+            return null;
+
+        var newIndex = _currentIndex + delta;
+
+        if (newIndex < 0 || newIndex >= Size)
             return _queue[_currentIndex];
-        }
 
-        public IReadOnlyList<TrackRecord> DisplayQueue()
-        {
-            return _queue;
-        }
+        _currentIndex = newIndex;
+
+        return _queue[_currentIndex];
+    }
+
+    public bool SetCurrent(string filePath)
+    {
+        var index = _queue.FindIndex(x => x.FilePath == filePath);
+
+        if (index < 0)
+            return false;
+
+        _currentIndex = index;
+        return true;
+    }
+
+    public IReadOnlyList<TrackRecord> DisplayQueue()
+    {
+        return _queue;
     }
 }

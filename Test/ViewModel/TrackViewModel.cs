@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using System;
-using System.Diagnostics;
 using Test.Schema;
 
 
@@ -16,11 +15,11 @@ namespace Test.ViewModel
 
         public TrackRecord Trecord;
 
-        private readonly Action<string> _play;
+        private readonly Action<string, bool> _play;
         private readonly Action<TrackViewModel> _remove;
 
 
-        public TrackViewModel(TrackRecord track, Action<string> play, Action<TrackViewModel> remove)
+        public TrackViewModel(TrackRecord track, Action<string, bool> play, Action<TrackViewModel> remove)
         {
             Title = track.Title;
             Artist = track.Artist ?? "";
@@ -37,7 +36,7 @@ namespace Test.ViewModel
         [RelayCommand]
         public void Play()
         {
-            _play(Trecord.FilePath);
+            _play(Trecord.FilePath, true);
         }
 
         [RelayCommand]

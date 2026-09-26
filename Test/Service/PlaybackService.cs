@@ -18,7 +18,7 @@ namespace Test.Service
 
     public class PlaybackService : IPlayable
     {
-        private readonly WaveOutEvent _outputDevice;
+        private WaveOutEvent? _outputDevice;
         private SpeedSampleProvider? _speedSampleProvider;
         private AudioFileReader? _audioFileReader;
 
@@ -30,7 +30,11 @@ namespace Test.Service
         public float PlaybackSpeed
         {
             get => _speedSampleProvider?.Speed ?? 1f;
-            set => _speedSampleProvider.Speed = value;
+            set
+            {
+                if (_speedSampleProvider != null)
+                    _speedSampleProvider.Speed = value;
+            }
         }
 
         public PlaybackState PlaybackState
@@ -48,12 +52,11 @@ namespace Test.Service
         private bool CanPausePlayback => _audioFileReader != null && PlaybackState == PlaybackState.Playing;
 
         public PlaybackService()
-        {
-            _outputDevice = new WaveOutEvent();
-        }
+        { }
 
         public void Init(string filePath)
         {
+            _outputDevice = new WaveOutEvent();
             _audioFileReader = new AudioFileReader(filePath);
             _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider());
             _speedSampleProvider.Speed = PlaybackSpeed;
@@ -61,18 +64,32 @@ namespace Test.Service
         }
 
         public void ResetAndPlay(string filePath)
-        {
-            Stop();
-            _audioFileReader?.Dispose();
+        {   
+            DisposePlayback();
+
             Init(filePath);
             Play();
+        }
+
+        private void DisposePlayback()
+        {
+            _outputDevice?.Stop();
+
+            _outputDevice?.Dispose();
+            _outputDevice = null;
+
+            _audioFileReader?.Dispose();
+            _audioFileReader = null;
+
+            _speedSampleProvider = null;
+            PlaybackState = PlaybackState.Stopped;
         }
 
         public void Play()
         {
             if (CanStartPlaypack)
             {
-                _outputDevice.Play();
+                _outputDevice?.Play();
                 PlaybackState = PlaybackState.Playing;
             }
         }
@@ -81,7 +98,7 @@ namespace Test.Service
         {
             if (CanPausePlayback)
             {
-                _outputDevice.Pause();
+                _outputDevice?.Pause();
                 PlaybackState = PlaybackState.Paused;
             }
         }
@@ -97,7 +114,7 @@ namespace Test.Service
 
             if (wasPlaying) 
             {
-                _outputDevice.Stop(); 
+                _outputDevice?.Stop(); 
             }
 
             double newPlaybackSeconds = CurrentPlaybackTime + delta;
@@ -108,7 +125,7 @@ namespace Test.Service
 
             if (wasPlaying)
             { 
-                _outputDevice.Play(); 
+                _outputDevice?.Play(); 
             }
         }
 
@@ -121,7 +138,7 @@ namespace Test.Service
 
             if (CanStopPlaypack)
             {
-                _outputDevice.Stop();
+                _outputDevice?.Stop();
                 _audioFileReader.CurrentTime = TimeSpan.Zero;
                 PlaybackState = PlaybackState.Stopped;
             }
