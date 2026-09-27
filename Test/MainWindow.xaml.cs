@@ -29,5 +29,10 @@ namespace Test
         {
             PlaybackVM?.SetSpeed((float)e.NewValue);
         }
+
+        private void VolumeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            PlaybackVM?.SetVolume((float)e.NewValue);
+        }
     }
 }

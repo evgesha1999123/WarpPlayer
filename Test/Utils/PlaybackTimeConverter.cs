@@ -20,5 +20,11 @@ namespace Test.Utils
         {
             throw new NotImplementedException();
         }
+
+        public static string ToUI_MM_SS(TimeSpan value)
+        {
+            var seconds = value.TotalSeconds;
+            return TimeSpan.FromSeconds(seconds).ToString(@"mm\:ss");
+        }
     }
 }

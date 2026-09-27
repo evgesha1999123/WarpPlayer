@@ -14,7 +14,7 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid RowDefinitions="Auto,*,Auto,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
 
         <Grid.Resources>
             <Utils:PlaybackTimeConverter x:Key="PlaybackTimeConverter" />
@@ -24,27 +24,66 @@
         <!-- Верхняя панель -->
         <Grid Grid.Row="0">
 
-            <!-- Управление скоростью -->
+            <!-- Управление скоростью и громкостью -->
             <StackPanel
-                Orientation="Horizontal"
-                VerticalAlignment="Top"
+                Orientation="Vertical"
                 HorizontalAlignment="Left"
                 Spacing="10"
                 Margin="14,14,0,0">
 
-                <TextBlock
-                    Text="Скорость"
-                    VerticalAlignment="Center" />
-
-                <Slider
+                <!-- Скорость -->
+                <StackPanel
                     Orientation="Horizontal"
-                    Minimum="0.25"
-                    Maximum="2"
-                    StepFrequency="0.01"
-                    Value="{x:Bind PlaybackVM.PlaybackSpeed, Mode=OneWay}"
-                    ValueChanged="SpeedSlider_ValueChanged"
-                    Width="200"
-                    VerticalAlignment="Center" />
+                    Spacing="10">
+
+                    <TextBlock
+                        Text="Скорость"
+                        FontSize="8"
+                        Width="40"
+                        VerticalAlignment="Center" />
+
+                    <Button Command="{x:Bind PlaybackVM.SetDefaultSpeedCommand}">
+                        <SymbolIcon Symbol="Refresh" />
+                    </Button>
+
+                    <Slider
+                        Orientation="Horizontal"
+                        Minimum="0.25"
+                        Maximum="2"
+                        StepFrequency="0.01"
+                        Value="{x:Bind PlaybackVM.PlaybackSpeed, Mode=OneWay}"
+                        ValueChanged="SpeedSlider_ValueChanged"
+                        Width="200"
+                        VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+                <!-- Громкость -->
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="10">
+
+                    <TextBlock
+                        Text="Громкость"
+                        FontSize="8"
+                        Width="40"
+                        VerticalAlignment="Center" />
+
+                    <Button Command="{x:Bind PlaybackVM.ToggleMuteCommand}">
+                        <SymbolIcon Symbol="{x:Bind PlaybackVM.VolumeStateIcon, Mode=OneWay}" />
+                    </Button>
+
+                    <Slider
+                        Orientation="Horizontal"
+                        Minimum="0"
+                        Maximum="1"
+                        StepFrequency="0.01"
+                        Value="{x:Bind PlaybackVM.Volume, Mode=OneWay}"
+                        ValueChanged="VolumeSlider_ValueChanged"
+                        Width="200"
+                        VerticalAlignment="Center" />
+
+                </StackPanel>
 
             </StackPanel>
 
@@ -58,41 +97,21 @@
                 Margin="0,14,14,0">
 
                 <!-- Открыть папку -->
-                <Button
-                    Command="{x:Bind PlaybackVM.SelectFolderCommand}">
-
+                <Button Command="{x:Bind PlaybackVM.SelectFolderCommand}">
                     <SymbolIcon Symbol="Folder" />
-
                 </Button>
 
                 <!-- Свернуть / развернуть плейлист -->
-                <Button
-                    Command="{x:Bind PlaybackVM.ShowHidePlaylistCommand}">
-
-                    <SymbolIcon
-                        Symbol="{x:Bind PlaybackVM.PlaylistButtonIcon, Mode=OneWay}" />
-
+                <Button Command="{x:Bind PlaybackVM.ShowHidePlaylistCommand}">
+                    <SymbolIcon Symbol="{x:Bind PlaybackVM.PlaylistButtonIcon, Mode=OneWay}" />
                 </Button>
 
             </StackPanel>
 
         </Grid>
 
-        
-        <!-- Основная область -->
-        <Grid Grid.Row="1">
 
-
-            <!-- Основной контент -->
-            <TextBlock
-                Text="{x:Bind PlaybackVM.CurrentTrackNameUI, Mode=OneWay}"
-                FontSize="24"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                TextAlignment="Center"
-                TextWrapping="Wrap"
-                Margin="20,0" />
-
+        <Grid Grid.Row="2">
             <!-- Плейлист -->
             <Grid
                 HorizontalAlignment="Right"
@@ -112,27 +131,35 @@
                     DataContext="{x:Bind PlaybackVM.PlaylistVM, Mode=OneWay}" />
 
             </Grid>
-
         </Grid>
 
 
         <!-- Слайдер воспроизведения -->
         <Slider
             x:Name="PlaybackSlider"
-            Grid.Row="2"
+            Grid.Row="3"
             Minimum="0"
             Maximum="{x:Bind PlaybackVM.DisplayTotalTrackLenSeconds, Mode=OneWay}"
             Value="{x:Bind PlaybackVM.CurrentPlaybackTime, Mode=OneWay}"
             ValueChanged="PlaybackSlider_ValueChanged"
             Width="600"
             HorizontalAlignment="Center"
-            Margin="0,0,0,20"
             ThumbToolTipValueConverter="{StaticResource PlaybackTimeConverter}" />
 
+        <!-- Track Name -->
+        <TextBlock
+            Text="{x:Bind PlaybackVM.CurrentTrackNameUI, Mode=OneWay}"
+            Grid.Row="4"
+            FontSize="14"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            TextAlignment="Center"
+            TextWrapping="NoWrap"
+            Padding="0,0,0,16"/>
 
         <!-- Кнопки управления -->
         <StackPanel
-            Grid.Row="3"
+            Grid.Row="5"
             Spacing="10"
             Orientation="Horizontal"
             HorizontalAlignment="Center"
@@ -148,47 +175,34 @@
 
             <Button
                 Command="{x:Bind PlaybackVM.PreviousTrackCommand}">
-
                 <SymbolIcon Symbol="Previous" />
-
             </Button>
 
             <Button
                 Command="{x:Bind PlaybackVM.RewindCommand}"
                 CommandParameter="{x:Bind PlaybackVM.BackwardPlaybackRewindDelta}">
-
                 <FontIcon Glyph="&#xeb9e;" />
-
             </Button>
 
             <Button
                 Command="{x:Bind PlaybackVM.TogglePlaybackCommand}">
-
-                <SymbolIcon
-                    Symbol="{x:Bind PlaybackVM.PlayPauseIcon, Mode=OneWay}" />
-
+                <SymbolIcon Symbol="{x:Bind PlaybackVM.PlayPauseIcon, Mode=OneWay}" />
             </Button>
 
             <Button
                 Command="{x:Bind PlaybackVM.RewindCommand}"
                 CommandParameter="{x:Bind PlaybackVM.ForwardPlaybackRewindDelta}">
-
                 <FontIcon Glyph="&#xeb9d;" />
-
             </Button>
 
             <Button
                 Command="{x:Bind PlaybackVM.NextTrackCommand}">
-
                 <SymbolIcon Symbol="Next" />
-
             </Button>
 
             <Button
                 Command="{x:Bind PlaybackVM.StopCommand}">
-
                 <SymbolIcon Symbol="Stop" />
-
             </Button>
 
             <!-- Длительность -->

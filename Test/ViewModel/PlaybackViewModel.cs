@@ -23,6 +23,7 @@ namespace Test.ViewModel
         public PlaybackState PlaybackState => _playbackService.PlaybackState;
         public Symbol PlayPauseIcon => PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
         public Symbol PlaylistButtonIcon => PlaylistVisibility == Visibility.Visible ? Symbol.ClosePane : Symbol.OpenPane;
+        public Symbol VolumeStateIcon => _playbackService.VolumeState == VolumeState.Unmuted ? Symbol.Volume : Symbol.Mute;
         public Visibility PlaylistVisibility
         {
             get => PlaylistVM.Visibility;
@@ -39,6 +40,12 @@ namespace Test.ViewModel
         {
             get => _playbackService.PlaybackSpeed;
             set => _playbackService.PlaybackSpeed = value;
+        }
+
+        public float Volume
+        {
+            get => _playbackService.GetVolume();
+            set => SetVolume(value);
         }
 
         private readonly PlaybackService _playbackService;
@@ -220,6 +227,31 @@ namespace Test.ViewModel
 
             PlaybackSpeed = speed;
             OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds), nameof(TrackDurationUI));
+        }
+
+        [RelayCommand]
+        public void SetDefaultSpeed()
+        {
+            SetSpeed(1f);
+            OnPropertyChanged(nameof(PlaybackSpeed));
+        }
+
+        [RelayCommand]
+        public void SetVolume(float volume)
+        {
+            _playbackService.SetVolume(volume);
+        }
+
+        [RelayCommand]
+        public void ToggleMute()
+        {
+            if (_playbackService.VolumeState == VolumeState.Unmuted) {
+                _playbackService.Mute();
+            } else {
+                _playbackService.Unmute();
+            }
+
+            OnPropertyChanged(nameof(VolumeStateIcon));
         }
 
         [RelayCommand]

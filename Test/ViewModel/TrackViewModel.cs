@@ -1,6 +1,9 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Diagnostics;
 using Test.Schema;
+using Test.Utils;
 
 
 namespace Test.ViewModel
@@ -12,12 +15,11 @@ namespace Test.ViewModel
         public Guid Id { get; init; }
         public string? Album { get; set; }
         public TimeSpan Duration { get; set; }
-
+        public string DurationUI { get; set; }
         public TrackRecord Trecord;
 
         private readonly Action<string, bool> _play;
         private readonly Action<TrackViewModel> _remove;
-
 
         public TrackViewModel(TrackRecord track, Action<string, bool> play, Action<TrackViewModel> remove)
         {
@@ -26,6 +28,8 @@ namespace Test.ViewModel
             Id = track.TrackId;
             Album = track.Album;
             Duration = track.Duration;
+
+            DurationUI = PlaybackTimeConverter.ToUI_MM_SS(Duration);
 
             Trecord = track;
 

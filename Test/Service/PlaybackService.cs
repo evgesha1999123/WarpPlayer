@@ -16,6 +16,12 @@ namespace Test.Service
         Paused,
     }
 
+    public enum VolumeState
+    {
+        Muted,
+        Unmuted,
+    }
+
     public class PlaybackService : IPlayable
     {
         private WaveOutEvent? _outputDevice;
@@ -51,8 +57,8 @@ namespace Test.Service
         private bool CanStopPlaypack => _audioFileReader != null && PlaybackState is not (PlaybackState.Stopped or PlaybackState.Init);
         private bool CanPausePlayback => _audioFileReader != null && PlaybackState == PlaybackState.Playing;
 
-        public PlaybackService()
-        { }
+        private float _previousVolume { get; set; }
+        public VolumeState VolumeState = VolumeState.Unmuted;
 
         public void Init(string filePath)
         {
@@ -154,6 +160,40 @@ namespace Test.Service
             double sourceSeconds = seconds * PlaybackSpeed;
             sourceSeconds = Math.Clamp(sourceSeconds, 0, _audioFileReader.TotalTime.TotalSeconds);
             _audioFileReader.CurrentTime = TimeSpan.FromSeconds(sourceSeconds);
+        }
+
+        public void Mute()
+        {
+            SetVolume(0);
+            VolumeState = VolumeState.Muted;
+        }
+
+        public void Unmute()
+        {
+            if (_outputDevice == null)
+            {
+                return;
+            }
+
+            VolumeState = VolumeState.Unmuted;
+            _outputDevice.Volume = _previousVolume;
+        }
+
+        public void SetVolume(float value)
+        {
+            if (_outputDevice == null || VolumeState == VolumeState.Muted)
+            {
+                _previousVolume = value;
+                return;
+            }
+
+            _previousVolume = _outputDevice.Volume;
+            _outputDevice.Volume = value;
+        }
+
+        public float GetVolume()
+        {
+            return _outputDevice == null ? 1f : _outputDevice.Volume;
         }
     }
 }
