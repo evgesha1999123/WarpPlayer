@@ -112,15 +112,25 @@
 
 
         <Grid Grid.Row="2">
+
+            <!-- Обложка -->
+            <Grid
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Width="400"
+                Height="400">
+
+                <Image
+                    Source="{x:Bind PlaybackVM.CoverArt, Mode=OneWay}"
+                    Stretch="UniformToFill" />
+
+            </Grid>
+
             <!-- Плейлист -->
             <Grid
                 HorizontalAlignment="Right"
                 VerticalAlignment="Stretch"
                 Margin="0,8,15,0">
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
 
                 <views:PlaylistView
                     HorizontalAlignment="Stretch"
@@ -131,8 +141,8 @@
                     DataContext="{x:Bind PlaybackVM.PlaylistVM, Mode=OneWay}" />
 
             </Grid>
-        </Grid>
 
+        </Grid>
 
         <!-- Слайдер воспроизведения -->
         <Slider

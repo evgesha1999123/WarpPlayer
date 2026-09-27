@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml.Media.Imaging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Test.Repo;
 using Test.Schema;
 using Test.Utils;
@@ -20,6 +22,11 @@ namespace Test.Service
             _databaseHealthChecker = dbHealthChecker;
 
             _databaseHealthChecker.CheckTablesExists();
+        }
+
+        public async Task<BitmapImage> GetCoverArt(byte[] imgBytes)
+        {
+            return await _fileLoader.BytesToBitmapImageAsync(imgBytes);
         }
 
         //public PlaylistRecord CreatePlaylist(Playlist playlist)

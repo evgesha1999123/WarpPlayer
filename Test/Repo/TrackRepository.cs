@@ -302,7 +302,7 @@ namespace Test.Repo
 
                 FilePath = (string)reader["FilePath"],
 
-                Cover = reader["Cover"] is DBNull ? null : (byte[])reader["Cover"],
+                Cover = (byte[])reader["Cover"],
 
                 Album = reader["Album"] is DBNull ? null : reader["Album"].ToString(),
 

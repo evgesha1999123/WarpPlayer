@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -29,6 +30,15 @@ namespace Test.ViewModel
             get => PlaylistVM.Visibility;
             set => PlaylistVM.Visibility = value;
         }
+
+        public BitmapImage? CoverArt
+        {
+            get => _coverArt;
+            private set => SetProperty(ref _coverArt, value);
+        }
+
+        private BitmapImage? _coverArt;
+
         public double CurrentPlaybackTime => _playbackService.CurrentPlaybackTime;
         public double TotalTrackLenSeconds => _playbackService.TotalPlaybackDuration;
         public int DisplayTotalTrackLenSeconds => (int)_playbackService.TotalPlaybackDuration;
@@ -74,7 +84,9 @@ namespace Test.ViewModel
             var existingTracks = _mediaLibraryService.LookupLibrary();
             if (existingTracks.Count > 0)
             {
-                _playbackService.Init(existingTracks[0].FilePath);
+                var track = existingTracks[0];
+                _playbackService.Init(track.FilePath);
+                _ = GetCoverArtAsync(track.Cover);
             }
 
             PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, this);
@@ -83,6 +95,12 @@ namespace Test.ViewModel
             _timer.Interval = TimeSpan.FromSeconds(0.3f);
             // Then, subscribe timer tick event
             _timer.Tick += PlaybackTimer_Tick;
+        }
+
+        [RelayCommand]
+        public async Task GetCoverArtAsync(byte[] imgBytes)
+        {
+            CoverArt = await _mediaLibraryService.GetCoverArt(imgBytes);
         }
 
         new protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -169,29 +187,29 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
-        public void NextTrack()
+        public async Task NextTrack()
         {
             var track = _playbackQueue.Move(+1);
             if (track != null)
             {
-                UpdateUIandPlay(track.FilePath);
+                await UpdateUIandPlay(track);
             }
         }
 
         [RelayCommand]
-        public void PreviousTrack()
+        public async Task PreviousTrack()
         {
             var track = _playbackQueue.Move(-1);
             if (track != null)
             {
-                UpdateUIandPlay(track.FilePath);
+                await UpdateUIandPlay(track);
             }
         }
 
-        public void UpdateUIandPlay(string filePath, bool setIndexOfTrack = false)
+        public async Task UpdateUIandPlay(TrackRecord track, bool setIndexOfTrack = false)
         {
             var prevSpeed = _playbackService.PlaybackSpeed;
-            _playbackService.ResetAndPlay(filePath);
+            _playbackService.ResetAndPlay(track.FilePath);
             if (!_timer.IsRunning)
             {
                 _timer.Start();
@@ -199,10 +217,11 @@ namespace Test.ViewModel
 
             if (setIndexOfTrack)
             {
-                _playbackQueue.SetCurrent(filePath);
+                _playbackQueue.SetCurrent(track.FilePath);
             }
 
             OnPropertyChanged(nameof(PlayPauseIcon), nameof(TrackDurationUI), nameof(DisplayTotalTrackLenSeconds), nameof(CurrentTrackNameUI));
+            await GetCoverArtAsync(track.Cover);
             SetSpeed(prevSpeed);
         }
 
@@ -269,7 +288,9 @@ namespace Test.ViewModel
 
             if (!_playbackService.IsReady && tracks.Count > 0)
             {
-                _playbackService.Init(tracks[0].FilePath);
+                var track = tracks[0];
+                _playbackService.Init(track.FilePath);
+                await GetCoverArtAsync(track.Cover);
                 isPlaybackServiceInitedNow = true;
             }
 

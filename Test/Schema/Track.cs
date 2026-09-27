@@ -9,7 +9,7 @@ namespace Test.Schema
         public required string Artist { get; set; }
         public required string FilePath { get; set; }
         public required TimeSpan Duration { get; set; }
-        public byte[]? Cover { get; set; }
+        public required byte[] Cover { get; init; }
         public string? Album { get; set; }
         public string? AlbumArtist { get; set; }
         public string[] Genres { get; set; } = [];

@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Test.Schema;
 using Test.Utils;
 
@@ -18,10 +19,10 @@ namespace Test.ViewModel
         public string DurationUI { get; set; }
         public TrackRecord Trecord;
 
-        private readonly Action<string, bool> _play;
+        private readonly Func<TrackRecord, bool, Task> _play;
         private readonly Action<TrackViewModel> _remove;
 
-        public TrackViewModel(TrackRecord track, Action<string, bool> play, Action<TrackViewModel> remove)
+        public TrackViewModel(TrackRecord track, Func<TrackRecord, bool, Task> play, Action<TrackViewModel> remove)
         {
             Title = track.Title;
             Artist = track.Artist ?? "";
@@ -38,9 +39,9 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
-        public void Play()
+        public async Task Play()
         {
-            _play(Trecord.FilePath, true);
+            await _play(Trecord, true);
         }
 
         [RelayCommand]

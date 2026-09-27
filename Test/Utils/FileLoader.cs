@@ -1,13 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.UI.Xaml.Media.Imaging;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using TagLib;
 using Test.Schema;
+using Windows.Storage.Streams;
+using System;
 
 
 namespace Test.Utils
 {
     public class FileLoader
     {
+        private byte[] defaultCoverArt = System.IO.File.ReadAllBytes(@"C:/Users/evges/source/repos/Test/Test/Assets/CoverArt/default.png");
+
         public Track LoadFromFile(string filePath)
         {
             var file = File.Create(filePath);
@@ -42,14 +49,14 @@ namespace Test.Utils
             };
         }
 
-        private static byte[]? GetFrontCover(File file)
+        private byte[] GetFrontCover(File file)
         {
             if (file.Tag.Pictures.Length > 0)
             {
                 var picture = file.Tag.Pictures[0];
                 return picture.Data.Data;
             }
-            return null;
+            return defaultCoverArt;
         }
 
         public List<Track> LoadFromFolder(string folder)
@@ -66,6 +73,19 @@ namespace Test.Utils
             }
 
             return result;
+        }
+
+        public async Task<BitmapImage> BytesToBitmapImageAsync(byte[] bytes)
+        {
+            using var stream = new InMemoryRandomAccessStream();
+            await stream.WriteAsync(bytes.AsBuffer());
+
+            stream.Seek(0);
+
+            var bitmap = new BitmapImage();
+            await bitmap.SetSourceAsync(stream);
+
+            return bitmap;
         }
     }
 }
