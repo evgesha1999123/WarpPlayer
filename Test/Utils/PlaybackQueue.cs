@@ -1,94 +1,166 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Test.Schema;
 
-public class PlaybackQueue
+namespace Test.Utils
 {
-    private readonly List<TrackRecord> _queue = [];
-    private int _currentIndex = -1;
-
-    public int Size => _queue.Count;
-
-    public TrackRecord? GetCurrent()
+    public enum PlaybackMode
     {
-        if (_currentIndex < 0 || _currentIndex >= Size)
-            return null;
-
-        return _queue[_currentIndex];
+        Normal,
+        RepeatAll,
+        Shuffle
     }
 
-    public void Add(TrackRecord track)
+    public class PlaybackQueue
     {
-        _queue.Add(track);
+        private readonly List<TrackRecord> _tracks = [];
+        private int _currentIndex = -1;
 
-        // Если очередь была пустой,
-        // первый добавленный становится current.
-        if (_currentIndex == -1)
-            _currentIndex = 0;
-    }
+        public PlaybackMode PlaybackMode { get; private set; } = PlaybackMode.Normal;
 
-    public bool Delete(TrackRecord track)
-    {
-        var index = _queue.IndexOf(track);
+        public int Size => _tracks.Count;
 
-        if (index < 0)
-            return false;
+        public bool IsEmpty => _tracks.Count == 0;
 
-        bool deletingCurrent = index == _currentIndex;
+        public bool IsFirst => _currentIndex == 0;
 
-        _queue.RemoveAt(index);
+        public bool IsLast => _currentIndex == _tracks.Count - 1;
 
-        if (Size == 0)
+        public bool HasNext => _currentIndex >= 0 && _currentIndex < _tracks.Count - 1;
+
+        public TrackRecord? Current =>
+            IsValidIndex(_currentIndex)
+                ? _tracks[_currentIndex]
+                : null;
+
+        public void TogglePlaybackMode()
         {
-            _currentIndex = -1;
+            PlaybackMode = PlaybackMode switch
+            {
+                PlaybackMode.Normal => PlaybackMode.Shuffle,
+                PlaybackMode.Shuffle => PlaybackMode.RepeatAll,
+                PlaybackMode.RepeatAll => PlaybackMode.Normal,
+                _ => PlaybackMode.Normal
+            };
+        }
+
+        public void Add(TrackRecord track)
+        {
+            ArgumentNullException.ThrowIfNull(track);
+
+            _tracks.Add(track);
+
+            // Первый добавленный трек становится текущим.
+            if (_currentIndex == -1)
+            {
+                _currentIndex = 0;
+            }
+        }
+
+        public bool Delete(TrackRecord track)
+        {
+            var index = _tracks.IndexOf(track);
+
+            if (index < 0)
+                return false;
+
+            _tracks.RemoveAt(index);
+
+            if (IsEmpty)
+            {
+                _currentIndex = -1;
+                return true;
+            }
+
+            if (index < _currentIndex)
+            {
+                // Удалили трек перед текущим.
+                // Индекс текущего сдвинулся на один назад.
+                _currentIndex--;
+            }
+            else if (index == _currentIndex && _currentIndex >= _tracks.Count)
+            {
+                // Удалили последний текущий трек.
+                // Теперь текущим становится предыдущий.
+                _currentIndex = _tracks.Count - 1;
+            }
+
             return true;
         }
 
-        if (index < _currentIndex)
+        public TrackRecord? MoveNext()
         {
-            // Удалили элемент перед current.
-            // Current физически сдвинулся на -1.
-            _currentIndex--;
-        }
-        else if (deletingCurrent)
-        {
-            // Current удалён.
-            // Если есть следующий — индекс остаётся тем же.
-            // Если удалили последний — переходим на предыдущий.
-            if (_currentIndex >= Size)
-                _currentIndex = Size - 1;
+            return Move(1);
         }
 
-        return true;
-    }
+        public TrackRecord? MovePrevious()
+        {
+            return Move(-1);
+        }
 
-    public TrackRecord? Move(int delta)
-    {
-        if (Size == 0)
+        private TrackRecord? Move(int offset)
+        {
+            var newIndex = _currentIndex + offset;
+
+            if (!IsValidIndex(newIndex))
+                return null;
+
+            _currentIndex = newIndex;
+
+            return _tracks[_currentIndex];
+        }
+
+        public TrackRecord? PeekNext()
+        {
+            var nextIndex = _currentIndex + 1;
+
+            return IsValidIndex(nextIndex)
+                ? _tracks[nextIndex]
+                : null;
+        }
+
+        public bool SetCurrent(string filePath)
+        {
+            var index = _tracks.FindIndex(track => track.FilePath == filePath);
+
+            if (index < 0)
+                return false;
+
+            _currentIndex = index;
+            return true;
+        }
+
+        public IReadOnlyList<TrackRecord> GetTracks()
+        {
+            return _tracks;
+        }
+
+        private bool IsValidIndex(int index)
+        {
+            return index >= 0 && index < _tracks.Count;
+        }
+
+        public TrackRecord? GetTrackAfterCurrentIsRemoved()
+        {
+            if (Current == null)
+                return null;
+
+            // Если после current есть следующий,
+            // он станет новым current.
+            if (HasNext)
+            {
+                return _tracks[_currentIndex + 1];
+            }
+
+            // Если current последний,
+            // новым current станет предыдущий.
+            if (_currentIndex > 0)
+            {
+                return _tracks[_currentIndex - 1];
+            }
+
+            // Это был единственный трек.
             return null;
-
-        var newIndex = _currentIndex + delta;
-
-        if (newIndex < 0 || newIndex >= Size)
-            return _queue[_currentIndex];
-
-        _currentIndex = newIndex;
-
-        return _queue[_currentIndex];
-    }
-
-    public bool SetCurrent(string filePath)
-    {
-        var index = _queue.FindIndex(x => x.FilePath == filePath);
-
-        if (index < 0)
-            return false;
-
-        _currentIndex = index;
-        return true;
-    }
-
-    public IReadOnlyList<TrackRecord> DisplayQueue()
-    {
-        return _queue;
+        }
     }
 }

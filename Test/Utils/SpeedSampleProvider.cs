@@ -14,10 +14,11 @@ namespace Test.Utils
 
         public WaveFormat WaveFormat => source.WaveFormat;
 
-        public SpeedSampleProvider(ISampleProvider source)
+        public SpeedSampleProvider(ISampleProvider source, float speed)
         {
             this.source = source;
             channels = source.WaveFormat.Channels;
+            Speed = speed;
         }
 
         public int Read(float[] buffer, int offset, int count)

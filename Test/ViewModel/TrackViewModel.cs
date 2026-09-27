@@ -19,10 +19,10 @@ namespace Test.ViewModel
         public string DurationUI { get; set; }
         public TrackRecord Trecord;
 
-        private readonly Func<TrackRecord, bool, Task> _play;
-        private readonly Action<TrackViewModel> _remove;
+        private readonly Func<TrackRecord, Task> _play;
+        private readonly Func<TrackViewModel, Task> _remove;
 
-        public TrackViewModel(TrackRecord track, Func<TrackRecord, bool, Task> play, Action<TrackViewModel> remove)
+        public TrackViewModel(TrackRecord track, Func<TrackRecord, Task> play, Func<TrackViewModel, Task> remove)
         {
             Title = track.Title;
             Artist = track.Artist ?? "";
@@ -41,13 +41,13 @@ namespace Test.ViewModel
         [RelayCommand]
         public async Task Play()
         {
-            await _play(Trecord, true);
+            await _play(Trecord);
         }
 
         [RelayCommand]
-        public void Remove()
+        public async Task Remove()
         {
-            _remove(this);
+            await _remove(this);
         }
     }
 }

@@ -42,7 +42,8 @@
                         Width="40"
                         VerticalAlignment="Center" />
 
-                    <Button Command="{x:Bind PlaybackVM.SetDefaultSpeedCommand}">
+                    <Button Command="{x:Bind PlaybackVM.SetDefaultSpeedCommand}"
+                            ToolTipService.ToolTip="Сбросить до обычной">
                         <SymbolIcon Symbol="Refresh" />
                     </Button>
 
@@ -97,12 +98,16 @@
                 Margin="0,14,14,0">
 
                 <!-- Открыть папку -->
-                <Button Command="{x:Bind PlaybackVM.SelectFolderCommand}">
+                <Button 
+                    Command="{x:Bind PlaybackVM.SelectFolderCommand}"
+                    ToolTipService.ToolTip="Указать папку с треками">
                     <SymbolIcon Symbol="Folder" />
                 </Button>
 
                 <!-- Свернуть / развернуть плейлист -->
-                <Button Command="{x:Bind PlaybackVM.ShowHidePlaylistCommand}">
+                <Button 
+                    Command="{x:Bind PlaybackVM.ShowHidePlaylistCommand}"
+                    ToolTipService.ToolTip="Скрыть / Показать плейлист">
                     <SymbolIcon Symbol="{x:Bind PlaybackVM.PlaylistButtonIcon, Mode=OneWay}" />
                 </Button>
 
@@ -213,6 +218,12 @@
             <Button
                 Command="{x:Bind PlaybackVM.StopCommand}">
                 <SymbolIcon Symbol="Stop" />
+            </Button>
+
+            <Button
+                Command="{x:Bind PlaybackVM.TogglePlaybackModeCommand}"
+                ToolTipService.ToolTip="{x:Bind PlaybackVM.PlaybackButtonToolTip, Mode=OneWay}">
+                <SymbolIcon Symbol="{x:Bind PlaybackVM.PlaybackButtonIcon, Mode=OneWay}"/>
             </Button>
 
             <!-- Длительность -->

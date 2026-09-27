@@ -22,9 +22,29 @@ namespace Test.ViewModel
 
         public bool IsUpdatingSlider = false;
         public PlaybackState PlaybackState => _playbackService.PlaybackState;
+        public PlaybackMode PlaybackMode => _playbackQueue.PlaybackMode;
         public Symbol PlayPauseIcon => PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
         public Symbol PlaylistButtonIcon => PlaylistVisibility == Visibility.Visible ? Symbol.ClosePane : Symbol.OpenPane;
         public Symbol VolumeStateIcon => _playbackService.VolumeState == VolumeState.Unmuted ? Symbol.Volume : Symbol.Mute;
+        public Symbol PlaybackButtonIcon => PlaybackMode switch
+        {
+            PlaybackMode.Normal => Symbol.Forward,
+            PlaybackMode.Shuffle => Symbol.Shuffle,
+            PlaybackMode.RepeatAll => Symbol.RepeatAll,
+            _ => Symbol.Forward
+        };
+
+        string startPart = "Текущий режим плеера: ";
+        public string PlaybackButtonToolTip
+        {
+            get => PlaybackMode switch
+            {
+                PlaybackMode.Normal => startPart + "обычный",
+                PlaybackMode.Shuffle => startPart + "перемешать",
+                PlaybackMode.RepeatAll => startPart + "повтор",
+                _ => startPart + "обычный"
+            };
+        }
         public Visibility PlaylistVisibility
         {
             get => PlaylistVM.Visibility;
@@ -85,7 +105,7 @@ namespace Test.ViewModel
             if (existingTracks.Count > 0)
             {
                 var track = existingTracks[0];
-                _playbackService.Init(track.FilePath);
+                _playbackService.Init(track.FilePath, PlaybackSpeed);
                 _ = GetCoverArtAsync(track.Cover);
             }
 
@@ -103,6 +123,7 @@ namespace Test.ViewModel
             CoverArt = await _mediaLibraryService.GetCoverArt(imgBytes);
         }
 
+        // TODO: Вызвано исключение: "System.Runtime.InteropServices.COMException" в WinRT.Runtime.dll
         new protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
@@ -123,7 +144,14 @@ namespace Test.ViewModel
 
             if ((int)CurrentPlaybackTime >= (int)TotalTrackLenSeconds)
             {
-                Stop();
+                if (_playbackQueue.IsLast)
+                {
+                    Stop();
+                }
+                else
+                {
+                    _ = NextTrack();
+                }
             }
 
             OnPropertyChanged(nameof(CurrentPlaybackTime), nameof(CurrentTrackPositionUI));
@@ -132,11 +160,11 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
-        public void TogglePlayback()
+        public async Task TogglePlayback()
         {
             if (CanStartPlayback)
             {
-                Play();
+                await Play();
             }
 
             else if (CanPausePlayback)
@@ -146,12 +174,17 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
-        public void Play()
+        public async Task Play()
         {
             _playbackService.Play();
-            _timer.Start();
+            EnsureTimerStarted();
 
-            OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon), nameof(CurrentTrackNameUI));
+            var currentTrack = _playbackQueue.Current;
+            if (_playbackService.IsReady && currentTrack != null)
+            {
+                await NotifyTrackWasChanged(currentTrack);
+            }
+            
         }
 
         [RelayCommand]
@@ -177,6 +210,24 @@ namespace Test.ViewModel
             );
         }
 
+        public void StopEmpty() 
+        {
+            _timer.Stop(); 
+            _playbackService.Unload();
+            CoverArt = null;
+            OnPropertyChanged(
+                nameof(PlaybackState),
+                nameof(PlayPauseIcon),
+                nameof(CurrentPlaybackTime), 
+                nameof(CurrentTrackPositionUI), 
+                nameof(TotalTrackLenSeconds),
+                nameof(DisplayTotalTrackLenSeconds),
+                nameof(TrackDurationUI),
+                nameof(CurrentTrackNameUI), 
+                nameof(CoverArt)
+            ); 
+        }
+
         [RelayCommand]
         public void Rewind(int delta)
         {
@@ -189,40 +240,96 @@ namespace Test.ViewModel
         [RelayCommand]
         public async Task NextTrack()
         {
-            var track = _playbackQueue.Move(+1);
+            var track = _playbackQueue.MoveNext();
             if (track != null)
             {
-                await UpdateUIandPlay(track);
+                await PlayTrack(track);
             }
         }
 
         [RelayCommand]
         public async Task PreviousTrack()
         {
-            var track = _playbackQueue.Move(-1);
+            var track = _playbackQueue.MovePrevious();
             if (track != null)
             {
-                await UpdateUIandPlay(track);
+                await PlayTrack(track);
             }
         }
 
-        public async Task UpdateUIandPlay(TrackRecord track, bool setIndexOfTrack = false)
+        public async Task PlayTrack(TrackRecord track)
         {
-            var prevSpeed = _playbackService.PlaybackSpeed;
-            _playbackService.ResetAndPlay(track.FilePath);
+            await Play(
+                track, 
+                () => _playbackService.ReloadAndPlay(track.FilePath, PlaybackSpeed)
+            );
+        }
+
+        public async Task PlayTrackMatchState(TrackRecord track)
+        {
+            await Play(
+                track,
+                () =>
+                {
+                    SetCurrentIndexOfQ(track);
+                    _playbackService.ReloadAndMatchState(track.FilePath, PlaybackSpeed);
+                }
+            );
+        }
+
+        public async Task PlayTrackFromQueue(TrackRecord track)
+        {
+            await Play(
+                track,
+                () =>
+                {
+                    SetCurrentIndexOfQ(track);
+                    _playbackService.ReloadAndPlay(track.FilePath, PlaybackSpeed);
+                }
+            );
+        }
+
+        private async Task Play(TrackRecord track, Action playbackAction)
+        {
+            IsUpdatingSlider = true;
+
+            try
+            {
+                playbackAction();
+                EnsureTimerStarted();
+                await NotifyTrackWasChanged(track);
+            }
+            finally
+            {
+                IsUpdatingSlider = false;
+            }
+        }
+
+        private void SetCurrentIndexOfQ(TrackRecord track)
+        {
+            _playbackQueue.SetCurrent(track.FilePath);
+        }
+
+        private void EnsureTimerStarted()
+        {
             if (!_timer.IsRunning)
             {
                 _timer.Start();
             }
+        }
 
-            if (setIndexOfTrack)
-            {
-                _playbackQueue.SetCurrent(track.FilePath);
-            }
-
-            OnPropertyChanged(nameof(PlayPauseIcon), nameof(TrackDurationUI), nameof(DisplayTotalTrackLenSeconds), nameof(CurrentTrackNameUI));
+        private async Task NotifyTrackWasChanged(TrackRecord track)
+        {
+            OnPropertyChanged(
+                nameof(PlaybackState),
+                nameof(PlayPauseIcon),
+                nameof(CurrentPlaybackTime),
+                nameof(CurrentTrackPositionUI),
+                nameof(TrackDurationUI),
+                nameof(DisplayTotalTrackLenSeconds),
+                nameof(CurrentTrackNameUI)
+            );
             await GetCoverArtAsync(track.Cover);
-            SetSpeed(prevSpeed);
         }
 
         [RelayCommand]
@@ -289,7 +396,7 @@ namespace Test.ViewModel
             if (!_playbackService.IsReady && tracks.Count > 0)
             {
                 var track = tracks[0];
-                _playbackService.Init(track.FilePath);
+                _playbackService.Init(track.FilePath, PlaybackSpeed);
                 await GetCoverArtAsync(track.Cover);
                 isPlaybackServiceInitedNow = true;
             }
@@ -312,10 +419,18 @@ namespace Test.ViewModel
             OnPropertyChanged(nameof(PlaylistButtonIcon), nameof(PlaylistVisibility));
         }
 
+        [RelayCommand]
+        public void TogglePlaybackMode()
+        {
+            _playbackQueue.TogglePlaybackMode();
+            OnPropertyChanged(nameof(PlaybackMode), nameof(PlaybackButtonIcon), nameof(PlaybackButtonToolTip));
+        }
+
         public string GetCurrentTrackName()
         {
-            var track = _playbackQueue.GetCurrent();
+            var track = _playbackQueue.Current;
             return track != null ? $"{track?.Artist} - {track?.Title}" : " ";
         }
+
     }
 }

@@ -8,6 +8,6 @@ public sealed partial class TrackView : UserControl
     public TrackView()
     {
         InitializeComponent();
-        ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+        //ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
     }
 }

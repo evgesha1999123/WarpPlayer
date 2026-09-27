@@ -56,28 +56,43 @@ namespace Test.Service
         private bool CanStartPlaypack => _audioFileReader != null && PlaybackState != PlaybackState.Playing;
         private bool CanStopPlaypack => _audioFileReader != null && PlaybackState is not (PlaybackState.Stopped or PlaybackState.Init);
         private bool CanPausePlayback => _audioFileReader != null && PlaybackState == PlaybackState.Playing;
+        private bool _wasPlaying => PlaybackState == PlaybackState.Playing;
 
         private float _previousVolume { get; set; }
         public VolumeState VolumeState = VolumeState.Unmuted;
 
-        public void Init(string filePath)
+        public void Init(string filePath, float prevSpeed)
         {
             _outputDevice = new WaveOutEvent();
             _audioFileReader = new AudioFileReader(filePath);
-            _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider());
-            _speedSampleProvider.Speed = PlaybackSpeed;
+            _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider(), prevSpeed);
             _outputDevice.Init(_speedSampleProvider);
         }
 
-        public void ResetAndPlay(string filePath)
-        {   
-            DisposePlayback();
-
-            Init(filePath);
+        public void ReloadAndPlay(string filePath, float prevSpeed)
+        {
+            Reload(filePath, prevSpeed);
             Play();
         }
 
-        private void DisposePlayback()
+        public void ReloadAndMatchState(string filePath, float prevSpeed)
+        {
+            var wasPlayingBefore = _wasPlaying;
+            Reload(filePath, prevSpeed);
+
+            if (wasPlayingBefore)
+            {
+                Play();
+            }
+        }
+
+        public void Reload(string filePath, float prevSpeed)
+        {
+            Unload();
+            Init(filePath, prevSpeed);
+        }
+
+        public void Unload()
         {
             _outputDevice?.Stop();
 
@@ -116,9 +131,7 @@ namespace Test.Service
                 return;
             }
 
-            bool wasPlaying = PlaybackState == PlaybackState.Playing;
-
-            if (wasPlaying) 
+            if (_wasPlaying) 
             {
                 _outputDevice?.Stop(); 
             }
@@ -129,7 +142,7 @@ namespace Test.Service
 
             _audioFileReader.CurrentTime = TimeSpan.FromSeconds(newPlaybackSeconds * PlaybackSpeed);
 
-            if (wasPlaying)
+            if (_wasPlaying)
             { 
                 _outputDevice?.Play(); 
             }

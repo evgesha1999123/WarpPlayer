@@ -1,6 +1,8 @@
 ﻿using Microsoft.UI.Xaml;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Test.Schema;
 using Test.Service;
 using Test.Utils;
@@ -38,13 +40,34 @@ namespace Test.ViewModel
         public void AddTrack(TrackRecord track)
         {
             PlaybackQ.Add(track);
-            Tracks.Add(new TrackViewModel(track, _playbackVM.UpdateUIandPlay, RemoveTrack));
+            Tracks.Add(new TrackViewModel(track, _playbackVM.PlayTrackFromQueue, RemoveTrack));
         }
 
-        public void RemoveTrack(TrackViewModel track)
+        public async Task RemoveTrack(TrackViewModel track)
         {
+            bool isCurrent = PlaybackQ.Current == track.Trecord;
+
+            if (isCurrent)
+            {
+                var replacement = PlaybackQ.GetTrackAfterCurrentIsRemoved();
+
+                PlaybackQ.Delete(track.Trecord);
+
+                if (replacement != null)
+                {
+                    await _playbackVM.PlayTrackMatchState(replacement);
+                }
+                else
+                {
+                    _playbackVM.StopEmpty();
+                }
+            }
+            else
+            {
+                PlaybackQ.Delete(track.Trecord);
+            }
+
             Library.DeleteTrack(track.Id.ToString());
-            PlaybackQ.Delete(track.Trecord);
             Tracks.Remove(track);
         }
     }
