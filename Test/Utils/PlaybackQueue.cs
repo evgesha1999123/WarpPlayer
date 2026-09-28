@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Test.Schema;
 
 namespace Test.Utils
@@ -28,10 +29,7 @@ namespace Test.Utils
 
         public bool HasNext => _currentIndex >= 0 && _currentIndex < _tracks.Count - 1;
 
-        public TrackRecord? Current =>
-            IsValidIndex(_currentIndex)
-                ? _tracks[_currentIndex]
-                : null;
+        public TrackRecord? Current => IsValidIndex(_currentIndex) ? _tracks[_currentIndex] : null;
 
         public void TogglePlaybackMode()
         {
@@ -88,35 +86,61 @@ namespace Test.Utils
             return true;
         }
 
-        public TrackRecord? MoveNext()
+        public TrackRecord? GetNext()
         {
             return Move(1);
         }
 
-        public TrackRecord? MovePrevious()
+        public TrackRecord? GetPrevious()
         {
             return Move(-1);
         }
 
         private TrackRecord? Move(int offset)
         {
+            if (Size <= 1)
+            {
+                return null;
+            }
+
+            if (PlaybackMode == PlaybackMode.Shuffle)
+            {
+                return GetShuffled();
+            }
+
             var newIndex = _currentIndex + offset;
 
-            if (!IsValidIndex(newIndex))
+            if (PlaybackMode == PlaybackMode.RepeatAll)
+            {
+                newIndex = (newIndex + Size) % Size;
+            }
+            else if (!IsValidIndex(newIndex))
+            {
                 return null;
+            }
 
             _currentIndex = newIndex;
+            return _tracks[_currentIndex];
+        }
 
+        private TrackRecord GetShuffled()
+        {
+            int newIndex;
+
+            while (true)
+            {
+                newIndex = Random.Shared.Next(0, Size);
+                if (_currentIndex != newIndex) break;
+            }
+
+            _currentIndex = newIndex;
             return _tracks[_currentIndex];
         }
 
         public TrackRecord? PeekNext()
         {
             var nextIndex = _currentIndex + 1;
-
-            return IsValidIndex(nextIndex)
-                ? _tracks[nextIndex]
-                : null;
+            return IsValidIndex(nextIndex) ? _tracks[nextIndex] : null;
         }
 
         public bool SetCurrent(string filePath)

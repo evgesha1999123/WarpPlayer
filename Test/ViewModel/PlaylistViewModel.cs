@@ -14,7 +14,6 @@ namespace Test.ViewModel
     {
         public Visibility Visibility;
         public ObservableCollection<TrackViewModel> Tracks { get; } = [];
-        
         public MediaLibraryService Library { get; }
         public PlaybackQueue PlaybackQ;
         private PlaybackViewModel _playbackVM;

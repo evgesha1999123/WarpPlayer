@@ -4,6 +4,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
+using NAudio.Wave;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -83,8 +84,8 @@ namespace Test.ViewModel
         private readonly PlaybackQueue _playbackQueue;
         private readonly FolderPicker _folderPicker;
         private readonly DispatcherQueueTimer _timer;
-        private bool CanStartPlayback { get => PlaybackState == PlaybackState.Init || PlaybackState == PlaybackState.Stopped || PlaybackState == PlaybackState.Paused; }
-        private bool CanPausePlayback { get => PlaybackState == PlaybackState.Playing; }
+        private bool CanStartPlayback => _playbackService.CanStartPlaypack;
+        private bool CanPausePlayback => _playbackService.CanPausePlayback;
 
         public PlaylistViewModel PlaylistVM;
 
@@ -240,7 +241,7 @@ namespace Test.ViewModel
         [RelayCommand]
         public async Task NextTrack()
         {
-            var track = _playbackQueue.MoveNext();
+            var track = _playbackQueue.GetNext();
             if (track != null)
             {
                 await PlayTrack(track);
@@ -250,7 +251,7 @@ namespace Test.ViewModel
         [RelayCommand]
         public async Task PreviousTrack()
         {
-            var track = _playbackQueue.MovePrevious();
+            var track = _playbackQueue.GetPrevious();
             if (track != null)
             {
                 await PlayTrack(track);
