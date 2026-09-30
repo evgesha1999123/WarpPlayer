@@ -62,6 +62,21 @@ namespace Test.Service
             return _trackRepository.CreateMany(tracks);
         }
 
+        public IReadOnlyList<TrackRecord> ImportTracks(IReadOnlyList<string> files)
+        {
+            var tracks = new List<Track>();
+
+            foreach(var file in files)
+            {
+                var track = _fileLoader.LoadFromFile(file);
+                tracks.Add(track);
+            }
+
+            var trackRecords = _trackRepository.CreateMany(tracks);
+
+            return trackRecords;
+        }
+
         public bool DeleteTrack(string id)
         {
             return _trackRepository.Delete(Guid.Parse(id));

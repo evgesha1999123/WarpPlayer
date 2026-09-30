@@ -97,6 +97,13 @@
                 Spacing="8"
                 Margin="0,14,14,0">
 
+                <!-- Добавить файлы -->
+                <Button
+                    Command="{x:Bind PlaybackVM.SelectFilesCommand}"
+                    ToolTipService.ToolTip="Добавить файлы">
+                    <SymbolIcon Symbol="OpenFile" />
+                </Button>
+
                 <!-- Открыть папку -->
                 <Button 
                     Command="{x:Bind PlaybackVM.SelectFolderCommand}"

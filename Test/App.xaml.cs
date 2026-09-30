@@ -39,7 +39,7 @@ namespace Test
             services.AddSingleton<ISqliteConnectionFactory>(_ => new SqliteConnectionFactory(@"C:/Users/evges/source/repos/Test/Test/playlist.db"));
             services.AddSingleton<ITrackRepository<Track, TrackRecord>, TrackRepository>();
 
-            services.AddSingleton<FolderPicker>();
+            services.AddSingleton<FilePicker>();
 
             services.AddSingleton<PlaybackService>();
 
@@ -61,7 +61,7 @@ namespace Test
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             _window = Services.GetRequiredService<MainWindow>();
-            FolderPicker picker = Services.GetRequiredService<FolderPicker>();
+            FilePicker picker = Services.GetRequiredService<FilePicker>();
             picker.SetWindow(_window);
             _window.Activate();
         }

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using NAudio.Wave;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -81,14 +82,14 @@ namespace Test.ViewModel
         private readonly PlaybackService _playbackService;
         private readonly MediaLibraryService _mediaLibraryService;
         private readonly PlaybackQueue _playbackQueue;
-        private readonly FolderPicker _folderPicker;
+        private readonly FilePicker _filePicker;
         private readonly DispatcherQueueTimer _timer;
         private bool CanStartPlayback => _playbackService.CanStartPlaypack;
         private bool CanPausePlayback => _playbackService.CanPausePlayback;
 
         public PlaylistViewModel PlaylistVM;
 
-        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FolderPicker folderPicker)
+        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker)
         {
             _playbackService = playbackService;
             _mediaLibraryService = mediaLibraryService;
@@ -99,7 +100,7 @@ namespace Test.ViewModel
 
             _mediaLibraryService = mediaLibraryService;
             _playbackQueue = playbackQueue;
-            _folderPicker = folderPicker;
+            _filePicker = folderPicker;
 
             var existingTracks = _mediaLibraryService.LookupLibrary();
             if (existingTracks.Count > 0)
@@ -376,9 +377,28 @@ namespace Test.ViewModel
         }
 
         [RelayCommand]
+        public async Task SelectFiles()
+        {
+            var files = await _filePicker.PickFilesAsync();
+
+            if (files.Count == 0)
+            {
+                return;
+            }
+
+            var tracks = _mediaLibraryService.ImportTracks(files);
+            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(tracks);
+
+            if (isPlaybackServiceInitedNow)
+            {
+                OnPropertyChanged(nameof(CurrentTrackNameUI));
+            }
+        }
+
+        [RelayCommand]
         public async Task SelectFolder()
         {
-            var folder = await _folderPicker.PickFolderAsync();
+            var folder = await _filePicker.PickFolderAsync();
 
             if (folder == null)
             {
@@ -386,24 +406,41 @@ namespace Test.ViewModel
             }
 
             var tracks = _mediaLibraryService.ImportTracks(folder);
-            bool isPlaybackServiceInitedNow = false;
+            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(tracks);
+
+            if (isPlaybackServiceInitedNow)
+            {
+                OnPropertyChanged(nameof(CurrentTrackNameUI));
+            }
+        }
+
+        private async Task<bool> LoadTracksAndGetPlaylistStatus(IReadOnlyList<TrackRecord> tracks)
+        {
+            bool wasPlaybackInitializedNow = await InitPlaybackOrPass(tracks);
+            AddToPlaylist(tracks);
+            return wasPlaybackInitializedNow;
+        }
+
+        private async Task<bool> InitPlaybackOrPass(IReadOnlyList<TrackRecord> tracks)
+        {
+            bool wasPlaybackInitializedNow = false;
 
             if (!_playbackService.IsReady && tracks.Count > 0)
             {
                 var track = tracks[0];
                 _playbackService.Init(track.FilePath, PlaybackSpeed);
                 await GetCoverArtAsync(track.Cover);
-                isPlaybackServiceInitedNow = true;
+                wasPlaybackInitializedNow = true;
             }
 
+            return wasPlaybackInitializedNow;
+        }
+
+        private void AddToPlaylist(IReadOnlyList<TrackRecord> tracks)
+        {
             foreach (var track in tracks)
             {
                 PlaylistVM.AddTrack(track);
-            }
-
-            if (isPlaybackServiceInitedNow)
-            {
-                OnPropertyChanged(nameof(CurrentTrackNameUI));
             }
         }
 
