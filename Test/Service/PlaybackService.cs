@@ -1,6 +1,8 @@
-﻿using NAudio.Wave;
+﻿using Microsoft.UI.Composition;
+using NAudio.Wave;
 using System;
 using System.Diagnostics;
+using System.Threading;
 using Test.Utils;
 
 
@@ -20,8 +22,8 @@ namespace Test.Service
 
         public bool IsReady => (_speedSampleProvider != null && _audioFileReader != null);
 
-        public int ForwardPlaybackRewindDelta { get; private set; } = 9;
-        public int BackwardPlaybackRewindDelta { get; private set; } = -9;
+        public int ForwardPlaybackRewindDelta { get; private init; } = 9;
+        public int BackwardPlaybackRewindDelta { get; private init; } = -9;
 
         public float PlaybackSpeed
         {
@@ -49,6 +51,25 @@ namespace Test.Service
         public void Init(string filePath, float prevSpeed)
         {
             _outputDevice = new WaveOutEvent();
+            _outputDevice.PlaybackStopped += (_, e) =>
+            {
+                if (e.Exception != null)
+                {
+                    Debug.WriteLine(
+                        $"PlaybackStopped: " +
+                        $"type={e.Exception.GetType().FullName}, " +
+                        $"message={e.Exception.Message}");
+
+                    Debug.WriteLine(e.Exception);
+                }
+                else
+                {
+                    Debug.WriteLine(
+                        $"PlaybackStopped normally, " +
+                        $"state={_outputDevice?.PlaybackState}");
+                }
+            };
+
             _audioFileReader = new AudioFileReader(filePath);
             _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider(), prevSpeed);
             _outputDevice.Init(_speedSampleProvider);
@@ -135,22 +156,20 @@ namespace Test.Service
             if (_audioFileReader == null)
                 return;
 
-            bool wasPlaying = PlaybackState == PlaybackState.Playing;
+            Debug.WriteLine("Seek position");
 
-            _outputDevice?.Stop();
-
-            seconds = Math.Clamp(
-                seconds,
-                0,
-                TotalPlaybackDuration);
-
-            _audioFileReader.CurrentTime =
-                TimeSpan.FromSeconds(seconds * PlaybackSpeed);
-
+            var wasPlaying = _outputDevice?.PlaybackState == PlaybackState.Playing;
             if (wasPlaying)
             {
-                _outputDevice?.Play();
+                _outputDevice?.Pause();
             }
+
+            seconds = Math.Clamp(seconds, 0, TotalPlaybackDuration);
+
+            _audioFileReader.CurrentTime = TimeSpan.FromSeconds(seconds * PlaybackSpeed);
+
+            if (wasPlaying)
+                _outputDevice?.Play();
         }
 
         public void Mute()

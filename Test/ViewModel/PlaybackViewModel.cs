@@ -21,7 +21,6 @@ namespace Test.ViewModel
         public int ForwardPlaybackRewindDelta { get; }
         public int BackwardPlaybackRewindDelta { get; }
 
-        public bool IsUpdatingSlider = false;
         public PlaybackState PlaybackState => _playbackService.PlaybackState;
         public PlaybackMode PlaybackMode => _playbackQueue.PlaybackMode;
         public Symbol PlayPauseIcon => PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
@@ -141,7 +140,6 @@ namespace Test.ViewModel
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
         {
-            IsUpdatingSlider = true;
 
             if ((int)CurrentPlaybackTime >= (int)TotalTrackLenSeconds)
             {
@@ -157,15 +155,14 @@ namespace Test.ViewModel
 
             OnPropertyChanged(nameof(CurrentPlaybackTime), nameof(CurrentTrackPositionUI));
 
-            IsUpdatingSlider = false;
         }
 
         [RelayCommand]
-        public async Task TogglePlayback()
+        public void TogglePlayback()
         {
             if (CanStartPlayback)
             {
-                await Play();
+                Play();
             }
 
             else if (CanPausePlayback)
@@ -174,8 +171,7 @@ namespace Test.ViewModel
             }
         }
 
-        [RelayCommand]
-        public async Task Play()
+        public void Play()
         {
             _playbackService.Play();
             EnsureTimerStarted();
@@ -183,7 +179,21 @@ namespace Test.ViewModel
             var currentTrack = _playbackQueue.Current;
             if (_playbackService.IsReady && currentTrack != null)
             {
-                await NotifyTrackWasChanged(currentTrack);
+                NotifyTrackWasChanged(currentTrack);
+            }
+        }
+
+        [RelayCommand]
+        public async Task PlayAsync()
+        {
+            _playbackService.Play();
+            EnsureTimerStarted();
+
+            var currentTrack = _playbackQueue.Current;
+            if (_playbackService.IsReady && currentTrack != null)
+            {
+                NotifyTrackWasChanged(currentTrack);
+                await GetCoverArtAsync(currentTrack.Cover);
             }
             
         }
@@ -232,10 +242,8 @@ namespace Test.ViewModel
         [RelayCommand]
         public void Rewind(int delta)
         {
-            IsUpdatingSlider = true;
             _playbackService.Rewind(delta);
             OnPropertyChanged(nameof(CurrentPlaybackTime));
-            IsUpdatingSlider = false;
         }
 
         [RelayCommand]
@@ -292,18 +300,10 @@ namespace Test.ViewModel
 
         private async Task Play(TrackRecord track, Action playbackAction)
         {
-            IsUpdatingSlider = true;
-
-            try
-            {
-                playbackAction();
-                EnsureTimerStarted();
-                await NotifyTrackWasChanged(track);
-            }
-            finally
-            {
-                IsUpdatingSlider = false;
-            }
+            playbackAction();
+            EnsureTimerStarted();
+            NotifyTrackWasChanged(track);
+            await GetCoverArtAsync(track.Cover);
         }
 
         private void SetCurrentIndexOfQ(TrackRecord track)
@@ -319,7 +319,7 @@ namespace Test.ViewModel
             }
         }
 
-        private async Task NotifyTrackWasChanged(TrackRecord track)
+        private void NotifyTrackWasChanged(TrackRecord track)
         {
             OnPropertyChanged(
                 nameof(PlaybackState),
@@ -330,17 +330,11 @@ namespace Test.ViewModel
                 nameof(DisplayTotalTrackLenSeconds),
                 nameof(CurrentTrackNameUI)
             );
-            await GetCoverArtAsync(track.Cover);
         }
 
         [RelayCommand]
         public void Seek(double seconds)
         {
-            if (IsUpdatingSlider)
-            {
-                return;
-            }
-
             _playbackService.Seek(seconds);
         }
 
