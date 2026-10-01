@@ -2,7 +2,7 @@
 using System;
 
 
-namespace Test.Utils
+namespace Test.Utils.Converter
 {
     public class PlaybackTimeConverter: IValueConverter
     {

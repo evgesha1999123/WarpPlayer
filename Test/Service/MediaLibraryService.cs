@@ -2,15 +2,29 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Test.Repo;
 using Test.Schema;
-using Test.Utils;
+using Test.Utils.File;
+using Test.Utils.Helper;
 
 namespace Test.Service
 {
     public class MediaLibraryService
     {
+        public record class ImportResponse
+        {
+            public IReadOnlyList<TrackRecord> TrackRecords { get; init; }
+            public int Skipped { get; init; }
+
+            public ImportResponse(IReadOnlyList<TrackRecord> tracks, int skipped)
+            {
+                TrackRecords = tracks;
+                Skipped = skipped;
+            }
+        }
+
         private readonly FileLoader _fileLoader;
         private readonly ITrackRepository<Track, TrackRecord> _trackRepository;
         private readonly DatabaseHealthChecker _databaseHealthChecker;
@@ -49,24 +63,15 @@ namespace Test.Service
             return _trackRepository.GetAll();
         }
 
-        public TrackRecord ImportTrack(string filePath)
+        public ImportResponse ImportTracks(IReadOnlyList<string> files)
         {
-            var track = _fileLoader.LoadFromFile(filePath);
-            return _trackRepository.Create(track);
+            var existingPaths = new List<string>(LookupLibrary().Select(f => f.FilePath));
+            HashSet<string> existing = new HashSet<string>(existingPaths);
+            HashSet<string> newFiles = new HashSet<string>(files);
+            newFiles.ExceptWith(existing);
 
-        }
-
-        public IReadOnlyList<TrackRecord> ImportTracks(string folder)
-        {
-            var tracks = _fileLoader.LoadFromFolder(folder);
-            return _trackRepository.CreateMany(tracks);
-        }
-
-        public IReadOnlyList<TrackRecord> ImportTracks(IReadOnlyList<string> files)
-        {
             var tracks = new List<Track>();
-
-            foreach(var file in files)
+            foreach (var file in newFiles)
             {
                 var track = _fileLoader.LoadFromFile(file);
                 tracks.Add(track);
@@ -74,7 +79,10 @@ namespace Test.Service
 
             var trackRecords = _trackRepository.CreateMany(tracks);
 
-            return trackRecords;
+            var candidates = files.Count;
+            var diff = candidates - newFiles.Count;
+
+            return new ImportResponse(trackRecords, diff);
         }
 
         public bool DeleteTrack(string id)

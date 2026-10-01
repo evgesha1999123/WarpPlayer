@@ -1,6 +1,5 @@
 ﻿using NAudio.Wave;
 using System;
-using System.Diagnostics;
 
 
 namespace Test.Utils
@@ -30,12 +29,11 @@ namespace Test.Utils
             int samplesRead = source.Read(temp, 0, sourceCount);
 
             if (samplesRead == 0)
+            {
                 return 0;
+            }
 
-            int outputSamples = Math.Min(
-                count,
-                (int)(samplesRead / Speed)
-            );
+            int outputSamples = Math.Min(count, (int)(samplesRead / Speed));
 
             for (int i = 0; i < outputSamples; i++)
             {

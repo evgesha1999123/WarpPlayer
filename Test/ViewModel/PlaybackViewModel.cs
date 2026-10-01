@@ -9,11 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Test.Schema;
 using Test.Service;
 using Test.Utils;
+using Test.Utils.File;
+using static Test.Utils.File.FilePicker;
 
 namespace Test.ViewModel
 {
@@ -46,6 +49,15 @@ namespace Test.ViewModel
                 _ => startPart + "обычный"
             };
         }
+
+        private DispatcherQueueTimer _notificationTimer;
+        private string _notificationMessage = "";
+        public string NotificationMessage
+        {
+            get => _notificationMessage;
+            set => SetProperty(ref _notificationMessage, value);
+        }
+
         public Visibility PlaylistVisibility
         {
             get => PlaylistVM.Visibility;
@@ -83,7 +95,7 @@ namespace Test.ViewModel
         private readonly MediaLibraryService _mediaLibraryService;
         private readonly PlaybackQueue _playbackQueue;
         private readonly FilePicker _filePicker;
-        private readonly DispatcherQueueTimer _timer;
+        private readonly DispatcherQueueTimer _playbackTimer;
         private bool CanStartPlayback => _playbackService.CanStartPlaypack;
         private bool CanPausePlayback => _playbackService.CanPausePlayback;
 
@@ -102,20 +114,26 @@ namespace Test.ViewModel
             _playbackQueue = playbackQueue;
             _filePicker = folderPicker;
 
+            _notificationTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+            _notificationTimer.Interval = TimeSpan.FromSeconds(10f);
+            _notificationTimer.Tick += NotificationTimer_TickOneTime;
+
             var existingTracks = _mediaLibraryService.LookupLibrary();
-            if (existingTracks.Count > 0)
-            {
+
+            if (existingTracks.Count > 0) {
                 var track = existingTracks[0];
                 _playbackService.Init(track.FilePath, PlaybackSpeed);
                 _ = GetCoverArtAsync(track.Cover);
+                SetNotificationMessage($"Треков в плейлисте: {existingTracks.Count}");
+            } else {
+                SetNotificationMessage("Импортируйте файлы для добавления в плейлист");
             }
 
             PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, this);
 
-            _timer = DispatcherQueue.GetForCurrentThread().CreateTimer();
-            _timer.Interval = TimeSpan.FromSeconds(0.3f);
-            // Then, subscribe timer tick event
-            _timer.Tick += PlaybackTimer_Tick;
+            _playbackTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+            _playbackTimer.Interval = TimeSpan.FromSeconds(0.3f);
+            _playbackTimer.Tick += PlaybackTimer_Tick;
         }
 
         [RelayCommand]
@@ -139,9 +157,25 @@ namespace Test.ViewModel
             }
         }
 
+        public void SetNotificationMessage(string text)
+        {
+            EnsureTimerStopped(_notificationTimer);
+            EnsureTimerStarted(_notificationTimer);
+            _notificationMessage = NormalizeMessage(text);
+            OnPropertyChanged(nameof(NotificationMessage));
+        }
+
+        private static string NormalizeMessage(string text)
+        {
+            if (text.Length >= 62)
+            {
+                return text[0..60] + "...";
+            }
+            return text;
+        }
+
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
         {
-
             if ((int)CurrentPlaybackTime >= (int)TotalTrackLenSeconds)
             {
                 if (_playbackQueue.IsLast)
@@ -155,7 +189,12 @@ namespace Test.ViewModel
             }
 
             OnPropertyChanged(nameof(CurrentPlaybackTime), nameof(CurrentTrackPositionUI));
+        }
 
+        private void NotificationTimer_TickOneTime(DispatcherQueueTimer sender, object args)
+        {
+            SetNotificationMessage("");
+            EnsureTimerStopped(_notificationTimer);
         }
 
         [RelayCommand]
@@ -170,17 +209,26 @@ namespace Test.ViewModel
             {
                 Pause();
             }
+
+            var view = PlaylistVM.GetCurrentActiveView();
+            view?.SetState(true, PlaybackState);
+        }
+
+        public PlaybackState TogglePlaybackWrapper()
+        {
+            TogglePlayback();
+            return PlaybackState;
         }
 
         public void Play()
         {
             _playbackService.Play();
-            EnsureTimerStarted();
+            EnsureTimerStarted(_playbackTimer);
 
             var currentTrack = _playbackQueue.Current;
             if (_playbackService.IsReady && currentTrack != null)
             {
-                NotifyTrackWasChanged(currentTrack);
+                NotifyTrackWasChanged();
             }
         }
 
@@ -188,12 +236,12 @@ namespace Test.ViewModel
         public async Task PlayAsync()
         {
             _playbackService.Play();
-            EnsureTimerStarted();
+            EnsureTimerStarted(_playbackTimer);
 
             var currentTrack = _playbackQueue.Current;
             if (_playbackService.IsReady && currentTrack != null)
             {
-                NotifyTrackWasChanged(currentTrack);
+                NotifyTrackWasChanged();
                 await GetCoverArtAsync(currentTrack.Cover);
             }
             
@@ -203,7 +251,7 @@ namespace Test.ViewModel
         public void Pause()
         {
             _playbackService.Pause();
-            _timer.Stop();
+            EnsureTimerStopped(_playbackTimer);
 
             OnPropertyChanged(nameof(PlaybackState), nameof(PlayPauseIcon));
         }
@@ -212,7 +260,7 @@ namespace Test.ViewModel
         public void Stop()
         {
             _playbackService.Stop();
-            _timer.Stop();
+            EnsureTimerStopped(_playbackTimer);
 
             OnPropertyChanged(
                 nameof(PlaybackState),
@@ -220,11 +268,13 @@ namespace Test.ViewModel
                 nameof(CurrentPlaybackTime),
                 nameof(CurrentTrackPositionUI)
             );
+
+            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         public void StopEmpty() 
         {
-            _timer.Stop(); 
+            EnsureTimerStopped(_playbackTimer); 
             _playbackService.Unload();
             CoverArt = null;
             OnPropertyChanged(
@@ -254,6 +304,8 @@ namespace Test.ViewModel
             if (track != null)
             {
                 await PlayTrack(track);
+                var view = PlaylistVM.GetCurrentActiveView();
+                view?.SetState(true, PlaybackState);
             }
         }
 
@@ -264,6 +316,8 @@ namespace Test.ViewModel
             if (track != null)
             {
                 await PlayTrack(track);
+                var view = PlaylistVM.GetCurrentActiveView();
+                view?.SetState(true, PlaybackState);
             }
         }
 
@@ -287,7 +341,7 @@ namespace Test.ViewModel
             );
         }
 
-        public async Task PlayTrackFromQueue(TrackRecord track)
+        public async Task<PlaybackState> PlayTrackFromQueue(TrackRecord track)
         {
             await Play(
                 track,
@@ -297,14 +351,17 @@ namespace Test.ViewModel
                     _playbackService.ReloadAndPlay(track.FilePath, PlaybackSpeed);
                 }
             );
+            return PlaybackState;
         }
 
         private async Task Play(TrackRecord track, Action playbackAction)
         {
             playbackAction();
-            EnsureTimerStarted();
-            NotifyTrackWasChanged(track);
+            EnsureTimerStarted(_playbackTimer);
+            NotifyTrackWasChanged();
+
             await GetCoverArtAsync(track.Cover);
+            PlaylistVM.SetActive(track);
         }
 
         private void SetCurrentIndexOfQ(TrackRecord track)
@@ -312,15 +369,23 @@ namespace Test.ViewModel
             _playbackQueue.SetCurrent(track.FilePath);
         }
 
-        private void EnsureTimerStarted()
+        private static void EnsureTimerStarted(DispatcherQueueTimer timer)
         {
-            if (!_timer.IsRunning)
+            if (!timer.IsRunning)
             {
-                _timer.Start();
+                timer.Start();
             }
         }
 
-        private void NotifyTrackWasChanged(TrackRecord track)
+        private static void EnsureTimerStopped(DispatcherQueueTimer timer)
+        {
+            if (timer.IsRunning)
+            {
+                timer.Stop();
+            }
+        }
+
+        private void NotifyTrackWasChanged()
         {
             OnPropertyChanged(
                 nameof(PlaybackState),
@@ -379,39 +444,51 @@ namespace Test.ViewModel
         [RelayCommand]
         public async Task SelectFiles()
         {
-            var files = await _filePicker.PickFilesAsync();
-
-            if (files.Count == 0)
-            {
-                return;
-            }
-
-            var tracks = _mediaLibraryService.ImportTracks(files);
-            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(tracks);
-
-            if (isPlaybackServiceInitedNow)
-            {
-                OnPropertyChanged(nameof(CurrentTrackNameUI));
-            }
+            await ExecImportPipline(_filePicker.PickFilesAsync);
         }
 
         [RelayCommand]
         public async Task SelectFolder()
         {
-            var folder = await _filePicker.PickFolderAsync();
+            await ExecImportPipline(_filePicker.PickFolderAsync);
+        }
 
-            if (folder == null)
+        private async Task ExecImportPipline(Func<Task<FilePickerResponse>> pickerAction)
+        {
+            var response = await pickerAction();
+
+            if (!response.HasContent)
             {
                 return;
             }
 
-            var tracks = _mediaLibraryService.ImportTracks(folder);
-            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(tracks);
+            await InitializeNewTracks(response.Files);
+        }
+
+        private async Task InitializeNewTracks(IReadOnlyList<string> files)
+        {
+            var importResponse = _mediaLibraryService.ImportTracks(files);
+            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(importResponse.TrackRecords);
 
             if (isPlaybackServiceInitedNow)
             {
                 OnPropertyChanged(nameof(CurrentTrackNameUI));
             }
+
+            if (importResponse.Skipped > 0)
+            {
+                SetNotificationMessage($"Треков загружено: {importResponse.TrackRecords.Count}. Пропущено дубликатов: {importResponse.Skipped}");
+            } else {
+                SetNotificationMessage($"Треков загружено: {importResponse.TrackRecords.Count}");
+            }
+        }
+
+        [RelayCommand]
+        private async Task ClearPlaylist()
+        {
+            Stop();
+            PlaylistVM.Clear();
+            StopEmpty();
         }
 
         private async Task<bool> LoadTracksAndGetPlaylistStatus(IReadOnlyList<TrackRecord> tracks)
@@ -430,6 +507,8 @@ namespace Test.ViewModel
                 var track = tracks[0];
                 _playbackService.Init(track.FilePath, PlaybackSpeed);
                 await GetCoverArtAsync(track.Cover);
+                PlaylistVM.SetActive(track);
+                //PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
                 wasPlaybackInitializedNow = true;
             }
 

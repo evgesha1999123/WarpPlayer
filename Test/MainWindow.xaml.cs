@@ -40,7 +40,6 @@ namespace Test
                 _capturedPointer = e.Pointer;
 
                 bool captured = PlaybackSlider.CapturePointer(e.Pointer);
-                Debug.WriteLine($"PRESSED (captured={captured}): {PlaybackSlider.Value}");
             }
         }
 
@@ -70,8 +69,6 @@ namespace Test
 
         private void FinishDrag(PointerRoutedEventArgs e)
         {
-            Debug.WriteLine($"RELEASE: {PlaybackSlider.Value}");
-
             if (_capturedPointer != null)
             {
                 PlaybackSlider.ReleasePointerCapture(_capturedPointer);

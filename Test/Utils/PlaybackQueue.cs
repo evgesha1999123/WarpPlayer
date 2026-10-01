@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Test.Schema;
 
 namespace Test.Utils
@@ -30,6 +29,7 @@ namespace Test.Utils
         public bool HasNext => _currentIndex >= 0 && _currentIndex < _tracks.Count - 1;
 
         public TrackRecord? Current => IsValidIndex(_currentIndex) ? _tracks[_currentIndex] : null;
+        public int CurrentIndex => _currentIndex;
 
         public void TogglePlaybackMode()
         {
@@ -185,6 +185,12 @@ namespace Test.Utils
 
             // Это был единственный трек.
             return null;
+        }
+
+        public void Clear()
+        {
+            _tracks.Clear();
+            _currentIndex = -1;
         }
     }
 }

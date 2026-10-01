@@ -1,15 +1,18 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml.Controls;
+using NAudio.Wave;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Test.Schema;
-using Test.Utils;
+using Test.Utils.Converter;
+using WinRT;
 
 
 namespace Test.ViewModel
 {
-    public partial class TrackViewModel
+    public partial class TrackViewModel : ObservableObject
     {
         public string Title { get; set; }
         public string Artist { get; set; }
@@ -19,10 +22,19 @@ namespace Test.ViewModel
         public string DurationUI { get; set; }
         public TrackRecord Trecord;
 
-        private readonly Func<TrackRecord, Task> _play;
-        private readonly Func<TrackViewModel, Task> _remove;
+        private bool IsActive = false;
+        private readonly string ActiveColor = "LimeGreen";
+        private readonly string InactiveColor = "Transparent";
+        public string StatusColor => IsActive ? ActiveColor : InactiveColor;
 
-        public TrackViewModel(TrackRecord track, Func<TrackRecord, Task> play, Func<TrackViewModel, Task> remove)
+        private readonly Func<TrackRecord, Task<PlaybackState>> _play;
+        private readonly Func<TrackViewModel, Task> _remove;
+        private readonly Func<PlaybackState> _toggle;
+
+        private PlaybackState PlaybackState { get; set; }
+        public Symbol PlayPauseIcon => (PlaybackState == PlaybackState.Playing && IsActive) ? Symbol.Pause : Symbol.Play;
+
+        public TrackViewModel(TrackRecord track, Func<TrackRecord, Task<PlaybackState>> play, Func<TrackViewModel, Task> remove, Func<PlaybackState> toggle)
         {
             Title = track.Title;
             Artist = track.Artist ?? "";
@@ -36,18 +48,61 @@ namespace Test.ViewModel
 
             _play = play;
             _remove = remove;
+            _toggle = toggle;
         }
 
         [RelayCommand]
         public async Task Play()
         {
-            await _play(Trecord);
+            if (IsActive) {
+                PlaybackState = _toggle();
+            } else {
+                PlaybackState = await _play(Trecord);
+            }
+
+            NotifyActivityStatus();
+            NotifyPlaybackStatus();
         }
 
         [RelayCommand]
         public async Task Remove()
         {
             await _remove(this);
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+            NotifyPlaybackStatus();
+            NotifyActivityStatus();
+            Debug.WriteLine($"Activated '{Trecord.FilePath}'");
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+            NotifyPlaybackStatus();
+            NotifyActivityStatus();
+        }
+
+        public void SetState(bool isActive, PlaybackState playbackState)
+        {
+            IsActive = isActive;
+            PlaybackState = playbackState;
+            NotifyActivityStatus();
+            NotifyPlaybackStatus();
+        }
+
+        private void NotifyActivityStatus()
+        {
+            OnPropertyChanged(nameof(IsActive));
+            OnPropertyChanged(nameof(StatusColor));
+        }
+
+        private void NotifyPlaybackStatus()
+        {
+            OnPropertyChanged(nameof(PlaybackState));
+            OnPropertyChanged(nameof(PlayPauseIcon));
         }
     }
 }

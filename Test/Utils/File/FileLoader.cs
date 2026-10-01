@@ -1,15 +1,13 @@
 ﻿using Microsoft.UI.Xaml.Media.Imaging;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using TagLib;
 using Test.Schema;
 using Windows.Storage.Streams;
 using System;
 
 
-namespace Test.Utils
+namespace Test.Utils.File
 {
     public class FileLoader
     {
@@ -17,13 +15,13 @@ namespace Test.Utils
 
         public Track LoadFromFile(string filePath)
         {
-            var file = File.Create(filePath);
+            var file = TagLib.File.Create(filePath);
             var fileName = System.IO.Path.GetFileName(filePath);
 
             string title = file.Tag.Title;
             string artist = file.Tag.FirstPerformer;
 
-            // Парсить из тегов
+            // TODO: Поменять схему, можно отображать просто имя файла
             if (file.Tag.Title == null)
             {
                 title = fileName.Replace(".mp3", "");
@@ -49,7 +47,7 @@ namespace Test.Utils
             };
         }
 
-        private byte[] GetFrontCover(File file)
+        private byte[] GetFrontCover(TagLib.File file)
         {
             if (file.Tag.Pictures.Length > 0)
             {
@@ -59,17 +57,13 @@ namespace Test.Utils
             return defaultCoverArt;
         }
 
-        public List<Track> LoadFromFolder(string folder)
+        public List<Track> BulkLoadFromFiles(IReadOnlyList<string> files)
         {
-            string[] files = System.IO.Directory.GetFiles(folder) ?? [];
             List<Track> result = [];
 
             foreach (var file in files)
             {
-                if (file.Contains(".mp3"))
-                {
-                    result.Add(LoadFromFile(file));
-                }
+                result.Add(LoadFromFile(file));
             }
 
             return result;

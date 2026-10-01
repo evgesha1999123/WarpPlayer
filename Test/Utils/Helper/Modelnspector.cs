@@ -2,7 +2,7 @@
 using System.Linq;
 
 
-namespace Test.Utils
+namespace Test.Utils.Helper
 {
     public class ModelInspector
     {

@@ -6,6 +6,8 @@ using Test.Repo;
 using Test.Schema;
 using Test.Service;
 using Test.Utils;
+using Test.Utils.File;
+using Test.Utils.Helper;
 using Test.ViewModel;
 using WinRT.PlayerVtableClasses;
 

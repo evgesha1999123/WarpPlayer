@@ -1,10 +1,6 @@
-﻿
+﻿using Test.Database;
 
-using Microsoft.Data.Sqlite;
-using System.Diagnostics;
-using Test.Database;
-
-namespace Test.Utils
+namespace Test.Utils.Helper
 {
     public class DatabaseHealthChecker
     {

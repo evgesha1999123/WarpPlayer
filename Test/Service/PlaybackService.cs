@@ -156,8 +156,6 @@ namespace Test.Service
             if (_audioFileReader == null)
                 return;
 
-            Debug.WriteLine("Seek position");
-
             var wasPlaying = _outputDevice?.PlaybackState == PlaybackState.Playing;
             if (wasPlaying)
             {
