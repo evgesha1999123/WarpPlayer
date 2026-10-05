@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Test.Schema;
 using Test.Utils.Converter;
-using WinRT;
 
 
 namespace Test.ViewModel

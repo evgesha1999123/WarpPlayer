@@ -33,13 +33,14 @@ namespace Test
                 return;
             }
 
-            // Also accept touch / pen
             if (e.Pointer.PointerDeviceType == PointerDeviceType.Mouse)
             {
+                PlaybackVM.IsSeeking = true;
+
                 _isUserDraggingPlaybackSlider = true;
                 _capturedPointer = e.Pointer;
 
-                bool captured = PlaybackSlider.CapturePointer(e.Pointer);
+                PlaybackSlider.CapturePointer(e.Pointer);
             }
         }
 
@@ -78,6 +79,8 @@ namespace Test
             _isUserDraggingPlaybackSlider = false;
 
             PlaybackVM.Seek(PlaybackSlider.Value);
+
+            PlaybackVM.IsSeeking = false;
         }
 
         private void PlaybackSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)

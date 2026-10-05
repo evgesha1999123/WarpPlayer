@@ -99,6 +99,8 @@ namespace Test.ViewModel
         private bool CanStartPlayback => _playbackService.CanStartPlaypack;
         private bool CanPausePlayback => _playbackService.CanPausePlayback;
 
+        public bool IsSeeking = false;
+
         public PlaylistViewModel PlaylistVM;
 
         public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker)
@@ -176,6 +178,11 @@ namespace Test.ViewModel
 
         private void PlaybackTimer_Tick(DispatcherQueueTimer sender, object args)
         {
+            if (IsSeeking)
+            {
+                return;
+            }
+
             if ((int)CurrentPlaybackTime >= (int)TotalTrackLenSeconds)
             {
                 if (_playbackQueue.IsLast)
@@ -362,6 +369,8 @@ namespace Test.ViewModel
 
             await GetCoverArtAsync(track.Cover);
             PlaylistVM.SetActive(track);
+            var activeView = PlaylistVM.GetCurrentActiveView();
+            activeView?.SetState(true, PlaybackState);
         }
 
         private void SetCurrentIndexOfQ(TrackRecord track)
@@ -495,6 +504,12 @@ namespace Test.ViewModel
         {
             bool wasPlaybackInitializedNow = await InitPlaybackOrPass(tracks);
             AddToPlaylist(tracks);
+
+            if (wasPlaybackInitializedNow && tracks.Count > 0)
+            {
+                PlaylistVM.SetActive(tracks[0]);
+            }
+            
             return wasPlaybackInitializedNow;
         }
 
@@ -507,8 +522,7 @@ namespace Test.ViewModel
                 var track = tracks[0];
                 _playbackService.Init(track.FilePath, PlaybackSpeed);
                 await GetCoverArtAsync(track.Cover);
-                PlaylistVM.SetActive(track);
-                //PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
+                
                 wasPlaybackInitializedNow = true;
             }
 

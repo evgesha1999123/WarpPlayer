@@ -106,14 +106,10 @@ namespace Test.ViewModel
                 if (replacement != null)
                 {
                     await _playbackVM.PlayTrackMatchState(replacement);
-                }
-                else
-                {
+                } else {
                     _playbackVM.StopEmpty();
                 }
-            }
-            else
-            {
+            } else {
                 PlaybackQ.Delete(track.Trecord);
             }
 
