@@ -1,15 +1,18 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.AI.MachineLearning;
 using System;
+using System.Diagnostics;
 using Test.Database;
 using Test.Repo;
 using Test.Schema;
 using Test.Service;
+using Test.Settings;
 using Test.Utils;
 using Test.Utils.File;
 using Test.Utils.Helper;
 using Test.ViewModel;
-using WinRT.PlayerVtableClasses;
+using static Test.Settings.ResourceManifest;
 
 
 namespace Test
@@ -38,7 +41,29 @@ namespace Test
 
         private void ConfigureServices(ServiceCollection services)
         {
-            services.AddSingleton<ISqliteConnectionFactory>(_ => new SqliteConnectionFactory(@"C:/Users/evges/source/repos/Test/Test/playlist.db"));
+            services.AddSingleton<ApplicationSettings>();
+            services.AddSingleton<DatabaseResources>(
+                provider =>
+                {
+                    var settings = provider.GetRequiredService<ApplicationSettings>();
+                    return settings.GetDatabase();
+                });
+
+            services.AddSingleton<ImageResources>(
+                provider =>
+                {
+                    var settings = provider.GetRequiredService<ApplicationSettings>();
+                    var images = settings.GetImages();
+                    Console.WriteLine($"!!!!!!!!!! Images: {images.Settings.Values}");
+                    return settings.GetImages();
+                });
+
+            services.AddSingleton<ISqliteConnectionFactory>(provider =>
+            {
+                var settings = provider.GetRequiredService<ApplicationSettings>();
+                return new SqliteConnectionFactory(settings.GetDatabase().Settings["Source"]);
+            });
+
             services.AddSingleton<ITrackRepository<Track, TrackRecord>, TrackRepository>();
 
             services.AddSingleton<FilePicker>();

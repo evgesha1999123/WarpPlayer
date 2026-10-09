@@ -1,11 +1,10 @@
-﻿
-
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
+
 
 namespace Test.Utils.Converter
 {
-    public class SpeedPercentConverter : IValueConverter
+    public partial class SpeedPercentConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

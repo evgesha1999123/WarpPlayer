@@ -1,8 +1,6 @@
-﻿using Microsoft.UI.Composition;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using System;
 using System.Diagnostics;
-using System.Threading;
 using Test.Utils;
 
 

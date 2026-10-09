@@ -1,5 +1,6 @@
 ﻿using System;
 
+
 namespace Test.Utils.Converter
 {
     public class PercentConverter

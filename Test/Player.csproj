@@ -50,6 +50,12 @@
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>
+  <ItemGroup>
+	  <Content Include="ResourceManifest.xml" />
+	  <Content Include="Database\Helper\Query\CreateIfNotExists\Playlist.sql" />
+	  <Content Include="Database\Helper\Query\CreateIfNotExists\PlaylistTrack.sql" />
+	  <Content Include="Database\Helper\Query\CreateIfNotExists\Track.sql" />
+  </ItemGroup>
 
   <!--
     Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution

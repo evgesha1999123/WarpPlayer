@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Configuration Version="1">
+	<Resources>
+		<Schema Database="sqlite" Migration="v0.0.1" Source="playlist">
+			<Table Name="Track"/>
+			<Table Name="Playlist"/>
+			<Table Name="PlaylistTrack"/>
+		</Schema>
+		<Assets>
+			<Images>
+				<Image Name="DefaultCoverArt" Path="Assets\CoverArt\default.png"/>
+			</Images>
+		</Assets>
+	</Resources>
+</Configuration>

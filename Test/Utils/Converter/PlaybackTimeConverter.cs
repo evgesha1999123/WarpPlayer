@@ -4,7 +4,7 @@ using System;
 
 namespace Test.Utils.Converter
 {
-    public class PlaybackTimeConverter: IValueConverter
+    public partial class PlaybackTimeConverter: IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

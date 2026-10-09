@@ -1,7 +1,7 @@
-﻿using Microsoft.UI.Input;
-using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.UI.Xaml.Controls;
 
 namespace Test.Views;
+
 
 public sealed partial class TrackView : UserControl
 {

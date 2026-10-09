@@ -8,8 +8,6 @@ using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Test.Schema;
@@ -17,6 +15,7 @@ using Test.Service;
 using Test.Utils;
 using Test.Utils.File;
 using static Test.Utils.File.FilePicker;
+
 
 namespace Test.ViewModel
 {

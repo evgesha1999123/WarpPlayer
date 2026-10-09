@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Test.Schema;
 
+
 namespace Test.Utils
 {
     public enum PlaybackMode
@@ -19,13 +20,9 @@ namespace Test.Utils
         public PlaybackMode PlaybackMode { get; private set; } = PlaybackMode.Normal;
 
         public int Size => _tracks.Count;
-
         public bool IsEmpty => _tracks.Count == 0;
-
         public bool IsFirst => _currentIndex == 0;
-
         public bool IsLast => _currentIndex == _tracks.Count - 1;
-
         public bool HasNext => _currentIndex >= 0 && _currentIndex < _tracks.Count - 1;
 
         public TrackRecord? Current => IsValidIndex(_currentIndex) ? _tracks[_currentIndex] : null;
@@ -135,12 +132,6 @@ namespace Test.Utils
 
             _currentIndex = newIndex;
             return _tracks[_currentIndex];
-        }
-
-        public TrackRecord? PeekNext()
-        {
-            var nextIndex = _currentIndex + 1;
-            return IsValidIndex(nextIndex) ? _tracks[nextIndex] : null;
         }
 
         public bool SetCurrent(string filePath)

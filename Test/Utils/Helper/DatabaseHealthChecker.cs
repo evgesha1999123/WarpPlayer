@@ -1,14 +1,20 @@
-﻿using Test.Database;
+﻿using System;
+using System.Diagnostics;
+using Test.Database;
+using static Test.Settings.ResourceManifest;
+
 
 namespace Test.Utils.Helper
 {
     public class DatabaseHealthChecker
     {
         private readonly ISqliteConnectionFactory _connectionFactory;
+        private readonly DatabaseResources Database;
 
-        public DatabaseHealthChecker(ISqliteConnectionFactory connectionFactory)
+        public DatabaseHealthChecker(ISqliteConnectionFactory connectionFactory, DatabaseResources database)
         {
             _connectionFactory = connectionFactory;
+            Database = database;
         }
 
         public bool CheckTablesExists()
@@ -16,19 +22,19 @@ namespace Test.Utils.Helper
             using var connection = _connectionFactory.Create();
             connection.Open();
 
-            string playlistTableSql = System.IO.File.ReadAllText(@"C:\Users\evges\source\repos\Test\Test\Database\Helper\Query\CreateIfNotExists\PlaylistTable.sql");
-            string playlistTrackTableSql = System.IO.File.ReadAllText(@"C:\Users\evges\source\repos\Test\Test\Database\Helper\Query\CreateIfNotExists\PlaylistTrackTable.sql");
-            string trackTableSql = System.IO.File.ReadAllText(@"C:\Users\evges\source\repos\Test\Test\Database\Helper\Query\CreateIfNotExists\TrackTable.sql");
+            string playlistSql = System.IO.File.ReadAllText(Database.Settings["Playlist"]);
+            string playlistTrackSql = System.IO.File.ReadAllText(Database.Settings["PlaylistTrack"]);
+            string trackSql = System.IO.File.ReadAllText(Database.Settings["Track"]);
 
             using var command = connection.CreateCommand();
 
-            command.CommandText = playlistTableSql;
+            command.CommandText = playlistSql;
             command.ExecuteNonQuery();
 
-            command.CommandText = playlistTrackTableSql;
+            command.CommandText = playlistTrackSql;
             command.ExecuteNonQuery();
 
-            command.CommandText = trackTableSql;
+            command.CommandText = trackSql;
             command.ExecuteNonQuery();
 
             return true;

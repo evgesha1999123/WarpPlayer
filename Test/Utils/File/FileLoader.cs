@@ -5,13 +5,19 @@ using System.Threading.Tasks;
 using Test.Schema;
 using Windows.Storage.Streams;
 using System;
+using static Test.Settings.ResourceManifest;
 
 
 namespace Test.Utils.File
 {
     public class FileLoader
     {
-        private byte[] defaultCoverArt = System.IO.File.ReadAllBytes(@"C:/Users/evges/source/repos/Test/Test/Assets/CoverArt/default.png");
+        private readonly byte[] defaultCoverArt;
+
+        public FileLoader(ImageResources images)
+        {
+            defaultCoverArt = System.IO.File.ReadAllBytes(images.Settings["DefaultCoverArt"]);
+        }
 
         public Track LoadFromFile(string filePath)
         {
@@ -21,14 +27,17 @@ namespace Test.Utils.File
             string title = file.Tag.Title;
             string artist = file.Tag.FirstPerformer;
 
-            // TODO: Поменять схему, можно отображать просто имя файла
             if (file.Tag.Title == null)
             {
                 title = fileName.Replace(".mp3", "");
 
-                title = fileName.Split("-")[0];
-                artist = fileName.Split("-")[1];
-
+                if (!title.Contains('-'))
+                {
+                    artist = "Неизвестный исполнитель";
+                } else {
+                    title = fileName.Split("-")[0];
+                    artist = fileName.Split("-")[1];
+                }
             }
 
             return new Track

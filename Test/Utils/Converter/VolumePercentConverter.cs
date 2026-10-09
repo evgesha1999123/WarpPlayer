@@ -4,7 +4,7 @@ using System;
 
 namespace Test.Utils.Converter
 {
-    public class VolumePercentConverter : IValueConverter
+    public partial class VolumePercentConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
