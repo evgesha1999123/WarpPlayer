@@ -503,9 +503,7 @@ namespace Player.ViewModel
         public void SetSpeed(float speed)
         {
             if (!_playbackService.IsReady)
-            {
                 return;
-            }
 
             PlaybackSpeed = speed;
             OnPropertyChanged(nameof(DisplayTotalTrackLenSeconds), nameof(TrackDurationUI));
@@ -527,6 +525,9 @@ namespace Player.ViewModel
         [RelayCommand]
         public void ToggleMute()
         {
+            if (!_playbackService.IsReady) 
+                return;
+
             if (_playbackService.VolumeState == VolumeState.Unmuted) {
                 _playbackService.Mute();
             } else {
