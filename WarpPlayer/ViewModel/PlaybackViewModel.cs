@@ -15,6 +15,7 @@ using Player.Service;
 using Player.Utils;
 using Player.Utils.File;
 using static Player.Utils.File.FilePicker;
+using System.Diagnostics;
 
 
 namespace Player.ViewModel
@@ -94,6 +95,7 @@ namespace Player.ViewModel
         private readonly MediaLibraryService _mediaLibraryService;
         private readonly PlaybackQueue _playbackQueue;
         private readonly FilePicker _filePicker;
+        private readonly FileValidator _fileValidator;
         private readonly DispatcherQueueTimer _playbackTimer;
         private bool CanStartPlayback => _playbackService.CanStartPlaypack;
         private bool CanPausePlayback => _playbackService.CanPausePlayback;
@@ -102,11 +104,12 @@ namespace Player.ViewModel
 
         public PlaylistViewModel PlaylistVM;
 
-        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker)
+        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker, FileValidator fileValidator)
         {
             _playbackService = playbackService;
             _mediaLibraryService = mediaLibraryService;
             _playbackQueue = playbackQueue;
+            _fileValidator = fileValidator;
 
             ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
@@ -125,7 +128,7 @@ namespace Player.ViewModel
                 var track = existingTracks[0];
                 _playbackService.Init(track.FilePath, PlaybackSpeed);
                 _ = GetCoverArtAsync(track.Cover);
-                SetNotificationMessage($"Треков в плейлисте: {existingTracks.Count}");
+                SetNotificationMessage($"Загружено треков в плейлист: {existingTracks.Count}");
             } else {
                 SetNotificationMessage("Импортируйте файлы для добавления в плейлист");
             }
@@ -228,29 +231,70 @@ namespace Player.ViewModel
 
         public void Play()
         {
+            var currentTrack = _playbackQueue.Current;
+            Debug.WriteLine($"current track: {currentTrack?.FilePath ?? "null"}");
+
+            if (currentTrack == null)
+            {
+                StopEmpty();
+                return;
+            }
+
+            if (!FileValidator.IsExist(currentTrack.FilePath))
+            {
+                HandleMissingTrack(currentTrack);
+                return;
+            }
+
             _playbackService.Play();
             EnsureTimerStarted(_playbackTimer);
 
-            var currentTrack = _playbackQueue.Current;
-            if (_playbackService.IsReady && currentTrack != null)
+            if (_playbackService.IsReady)
             {
                 NotifyTrackWasChanged();
             }
         }
 
+        private void HandleMissingTrack(TrackRecord track)
+        {
+            Debug.WriteLine($"Track file is missing: {track.FilePath}");
+
+            _playbackQueue.InvalidateCurrent();
+            PlaylistVM.RemoveTrackSilently(track);
+
+            StopEmpty();
+
+            SetNotificationMessage(
+                $"Файл трека не найден: " +
+                $"'{System.IO.Path.GetFileNameWithoutExtension(track.FilePath)}'");
+        }
+
         [RelayCommand]
         public async Task PlayAsync()
         {
+            var currentTrack = _playbackQueue.Current;
+            Debug.WriteLine($"current track: {currentTrack?.FilePath ?? "null"}");
+
+            if (currentTrack == null)
+            {
+                StopEmpty();
+                return;
+            }
+
+            if (!FileValidator.IsExist(currentTrack.FilePath))
+            {
+                HandleMissingTrack(currentTrack);
+                return;
+            }
+
             _playbackService.Play();
             EnsureTimerStarted(_playbackTimer);
 
-            var currentTrack = _playbackQueue.Current;
-            if (_playbackService.IsReady && currentTrack != null)
+            if (_playbackService.IsReady)
             {
                 NotifyTrackWasChanged();
                 await GetCoverArtAsync(currentTrack.Cover);
             }
-            
         }
 
         [RelayCommand]
@@ -307,69 +351,112 @@ namespace Player.ViewModel
         public async Task NextTrack()
         {
             var track = _playbackQueue.GetNext();
-            if (track != null)
-            {
-                await PlayTrack(track);
-                var view = PlaylistVM.GetCurrentActiveView();
-                view?.SetState(true, PlaybackState);
-            }
+
+            Debug.WriteLine($"Next: {track?.FilePath ?? "null"}");
+
+            if (track == null)
+                return;
+
+            await PlayTrack(track);
+            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         [RelayCommand]
         public async Task PreviousTrack()
         {
             var track = _playbackQueue.GetPrevious();
-            if (track != null)
-            {
-                await PlayTrack(track);
-                var view = PlaylistVM.GetCurrentActiveView();
-                view?.SetState(true, PlaybackState);
-            }
+
+            Debug.WriteLine($"Previous: {track?.FilePath ?? "null"}");
+
+            if (track == null)
+                return;
+
+            await PlayTrack(track);
+            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         public async Task PlayTrack(TrackRecord track)
         {
+            if (!CanPlayTrack(track))
+                return;
+
             await Play(
-                track, 
-                () => _playbackService.ReloadAndPlay(track.FilePath, PlaybackSpeed)
-            );
+                track,
+                () =>
+                {
+                    SetCurrentIndexOfQ(track);
+
+                    _playbackService.ReloadAndPlay(
+                        track.FilePath,
+                        PlaybackSpeed);
+                });
+        }
+
+        private bool CanPlayTrack(TrackRecord track)
+        {
+            if (FileValidator.IsExist(track.FilePath))
+                return true;
+
+            HandleMissingTrack(track);
+            return false;
         }
 
         public async Task PlayTrackMatchState(TrackRecord track)
         {
+            if (!CanPlayTrack(track))
+                return;
+
             await Play(
                 track,
                 () =>
                 {
                     SetCurrentIndexOfQ(track);
-                    _playbackService.ReloadAndMatchState(track.FilePath, PlaybackSpeed);
-                }
-            );
+
+                    _playbackService.ReloadAndMatchState(
+                        track.FilePath,
+                        PlaybackSpeed);
+                });
         }
 
         public async Task<PlaybackState> PlayTrackFromQueue(TrackRecord track)
         {
+            if (!CanPlayTrack(track))
+                return PlaybackState;
+
             await Play(
                 track,
                 () =>
                 {
                     SetCurrentIndexOfQ(track);
-                    _playbackService.ReloadAndPlay(track.FilePath, PlaybackSpeed);
-                }
-            );
+
+                    _playbackService.ReloadAndPlay(
+                        track.FilePath,
+                        PlaybackSpeed);
+                });
+
             return PlaybackState;
         }
 
         private async Task Play(TrackRecord track, Action playbackAction)
         {
+            if (!CanPlayTrack(track))
+                return;
+
+            if (!_playbackQueue.SetCurrent(track.FilePath))
+            {
+                Debug.WriteLine($"Track is not present in playback queue: {track.FilePath}");
+                return;
+            }
+
             playbackAction();
+
             EnsureTimerStarted(_playbackTimer);
             NotifyTrackWasChanged();
 
             await GetCoverArtAsync(track.Cover);
+
             PlaylistVM.SetActive(track);
-            var activeView = PlaylistVM.GetCurrentActiveView();
-            activeView?.SetState(true, PlaybackState);
+            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         private void SetCurrentIndexOfQ(TrackRecord track)
@@ -492,7 +579,7 @@ namespace Player.ViewModel
         }
 
         [RelayCommand]
-        private async Task ClearPlaylist()
+        public async Task ClearPlaylist()
         {
             Stop();
             PlaylistVM.Clear();

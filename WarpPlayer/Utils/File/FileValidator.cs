@@ -4,9 +4,9 @@ namespace Player.Utils.File
 {
     public class FileValidator
     {
-        public static bool CheckIsExists(string path)
+        public static bool IsExist(string? path)
         {
-            return System.IO.File.Exists(path);
+            return path != null ? System.IO.File.Exists(path) : false;
         }
 
         public static void CheckFormat()

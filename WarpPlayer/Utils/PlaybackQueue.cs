@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Player.Schema;
 
-
 namespace Player.Utils
 {
     public enum PlaybackMode
@@ -21,11 +20,35 @@ namespace Player.Utils
 
         public int Size => _tracks.Count;
         public bool IsEmpty => _tracks.Count == 0;
-        public bool IsFirst => _currentIndex == 0;
-        public bool IsLast => _currentIndex == _tracks.Count - 1;
-        public bool HasNext => _currentIndex >= 0 && _currentIndex < _tracks.Count - 1;
 
-        public TrackRecord? Current => IsValidIndex(_currentIndex) ? _tracks[_currentIndex] : null;
+        public bool IsCurrentValid => IsValidIndex(_currentIndex);
+
+        public bool IsFirst =>
+            IsCurrentValid && _currentIndex == 0;
+
+        public bool IsLast =>
+            IsCurrentValid && _currentIndex == _tracks.Count - 1;
+
+        public bool HasNext =>
+            Size > 0 &&
+            (
+                !IsCurrentValid ||
+                _currentIndex < _tracks.Count - 1 ||
+                PlaybackMode == PlaybackMode.RepeatAll ||
+                PlaybackMode == PlaybackMode.Shuffle
+            );
+
+        public bool HasPrevious =>
+            Size > 0 &&
+            (
+                !IsCurrentValid ||
+                _currentIndex > 0 ||
+                PlaybackMode == PlaybackMode.RepeatAll ||
+                PlaybackMode == PlaybackMode.Shuffle
+            );
+
+        public TrackRecord? Current => IsCurrentValid ? _tracks[_currentIndex] : null;
+
         public int CurrentIndex => _currentIndex;
 
         public void TogglePlaybackMode()
@@ -45,8 +68,7 @@ namespace Player.Utils
 
             _tracks.Add(track);
 
-            // Первый добавленный трек становится текущим.
-            if (_currentIndex == -1)
+            if (!IsCurrentValid)
             {
                 _currentIndex = 0;
             }
@@ -54,33 +76,38 @@ namespace Player.Utils
 
         public bool Delete(TrackRecord track)
         {
+            ArgumentNullException.ThrowIfNull(track);
+
             var index = _tracks.IndexOf(track);
 
             if (index < 0)
                 return false;
 
+            var deletingCurrent = index == _currentIndex;
+
             _tracks.RemoveAt(index);
 
             if (IsEmpty)
             {
-                _currentIndex = -1;
+                InvalidateCurrent();
                 return true;
             }
 
-            if (index < _currentIndex)
+            if (deletingCurrent)
             {
-                // Удалили трек перед текущим.
-                // Индекс текущего сдвинулся на один назад.
-                _currentIndex--;
+                InvalidateCurrent();
             }
-            else if (index == _currentIndex && _currentIndex >= _tracks.Count)
+            else if (index < _currentIndex)
             {
-                // Удалили последний текущий трек.
-                // Теперь текущим становится предыдущий.
-                _currentIndex = _tracks.Count - 1;
+                _currentIndex--;
             }
 
             return true;
+        }
+
+        public void InvalidateCurrent()
+        {
+            _currentIndex = -1;
         }
 
         public TrackRecord? GetNext()
@@ -93,19 +120,28 @@ namespace Player.Utils
             return Move(-1);
         }
 
-        private TrackRecord? Move(int offset)
+        private TrackRecord? Move(int direction)
         {
-            if (Size <= 1)
-            {
+            if (IsEmpty)
                 return null;
-            }
 
             if (PlaybackMode == PlaybackMode.Shuffle)
             {
-                return GetShuffled();
+                return MoveShuffle();
             }
 
-            var newIndex = _currentIndex + offset;
+            // Sentinel state:
+            // current отсутствует, но очередь не пустая.
+            //
+            // Next  -> первый трек.
+            // Previous -> последний трек.
+            if (!IsCurrentValid)
+            {
+                _currentIndex = direction > 0 ? 0 : _tracks.Count - 1;
+                return _tracks[_currentIndex];
+            }
+
+            var newIndex = _currentIndex + direction;
 
             if (PlaybackMode == PlaybackMode.RepeatAll)
             {
@@ -117,26 +153,38 @@ namespace Player.Utils
             }
 
             _currentIndex = newIndex;
+
             return _tracks[_currentIndex];
         }
 
-        private TrackRecord GetShuffled()
+        private TrackRecord MoveShuffle()
         {
-            int newIndex;
-
-            while (true)
+            if (Size == 1)
             {
-                newIndex = Random.Shared.Next(0, Size);
-                if (_currentIndex != newIndex) break;
+                _currentIndex = 0;
+                return _tracks[0];
             }
 
+            int newIndex;
+
+            do
+            {
+                newIndex = Random.Shared.Next(Size);
+            }
+            while (newIndex == _currentIndex);
+
             _currentIndex = newIndex;
+
             return _tracks[_currentIndex];
         }
 
         public bool SetCurrent(string filePath)
         {
-            var index = _tracks.FindIndex(track => track.FilePath == filePath);
+            var index = _tracks.FindIndex(
+                track => string.Equals(
+                    track.FilePath,
+                    filePath,
+                    StringComparison.OrdinalIgnoreCase));
 
             if (index < 0)
                 return false;
@@ -145,43 +193,35 @@ namespace Player.Utils
             return true;
         }
 
-        public IReadOnlyList<TrackRecord> GetTracks()
-        {
-            return _tracks;
-        }
-
-        private bool IsValidIndex(int index)
-        {
-            return index >= 0 && index < _tracks.Count;
-        }
+        public IReadOnlyList<TrackRecord> GetTracks() => _tracks;
 
         public TrackRecord? GetTrackAfterCurrentIsRemoved()
         {
-            if (Current == null)
+            if (!IsCurrentValid)
                 return null;
 
-            // Если после current есть следующий,
-            // он станет новым current.
-            if (HasNext)
+            if (_currentIndex < _tracks.Count - 1)
             {
                 return _tracks[_currentIndex + 1];
             }
 
-            // Если current последний,
-            // новым current станет предыдущий.
             if (_currentIndex > 0)
             {
                 return _tracks[_currentIndex - 1];
             }
 
-            // Это был единственный трек.
             return null;
         }
 
         public void Clear()
         {
             _tracks.Clear();
-            _currentIndex = -1;
+            InvalidateCurrent();
+        }
+
+        private bool IsValidIndex(int index)
+        {
+            return index >= 0 && index < _tracks.Count;
         }
     }
 }

@@ -54,7 +54,6 @@ namespace Player
                 {
                     var settings = provider.GetRequiredService<ApplicationSettings>();
                     var images = settings.GetImages();
-                    Console.WriteLine($"!!!!!!!!!! Images: {images.Settings.Values}");
                     return settings.GetImages();
                 });
 
@@ -76,6 +75,7 @@ namespace Player
 
             services.AddSingleton<MediaLibraryService>();
 
+            services.AddSingleton<FileValidator>();
             services.AddTransient<PlaybackViewModel>();
 
             services.AddSingleton<MainWindow>();

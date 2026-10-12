@@ -1,11 +1,12 @@
 ﻿using Microsoft.UI.Xaml;
-using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using Player.Schema;
 using Player.Service;
 using Player.Utils;
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 
 namespace Player.ViewModel
@@ -103,19 +104,43 @@ namespace Player.ViewModel
 
                 PlaybackQ.Delete(track.Trecord);
 
+                Tracks.Remove(track);
+                Library.DeleteTrack(track.Id.ToString());
+
                 if (replacement != null)
                 {
                     await _playbackVM.PlayTrackMatchState(replacement);
-                } else {
+                }
+                else
+                {
                     _playbackVM.StopEmpty();
                 }
-            } else {
+            }
+            else
+            {
                 PlaybackQ.Delete(track.Trecord);
+
+                Tracks.Remove(track);
+                Library.DeleteTrack(track.Id.ToString());
             }
 
-            Library.DeleteTrack(track.Id.ToString());
-            Tracks.Remove(track);
-            _playbackVM.SetNotificationMessage($"Трек удален из плейлиста: '{System.IO.Path.GetFileName(track.Trecord.FilePath).Split(".")[0]}'");
+            _playbackVM.SetNotificationMessage(
+                $"Трек удален из плейлиста: " +
+                $"'{System.IO.Path.GetFileNameWithoutExtension(track.Trecord.FilePath)}'");
+        }
+
+        public void RemoveTrackSilently(TrackRecord track)
+        {
+            PlaybackQ.Delete(track);
+
+            var view = Tracks.FirstOrDefault(t => t.Trecord == track);
+
+            if (view != null)
+            {
+                Tracks.Remove(view);
+            }
+
+            Library.DeleteTrack(track.TrackId.ToString());
         }
 
         public void Clear()

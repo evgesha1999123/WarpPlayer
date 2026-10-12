@@ -60,7 +60,7 @@ namespace Player.Service
 
         public IReadOnlyList<TrackRecord> LookupLibrary()
         {
-            return _trackRepository.GetAll();
+            return _trackRepository.GetAll().Where(f => FileValidator.IsExist(f.FilePath)).ToList();
         }
 
         public ImportResponse ImportTracks(IReadOnlyList<string> files)
