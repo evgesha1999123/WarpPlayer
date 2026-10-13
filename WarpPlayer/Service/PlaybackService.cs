@@ -15,21 +15,22 @@ namespace Player.Service
     public class PlaybackService : IPlayable
     {
         private WaveOutEvent? _outputDevice;
-        private SpeedSampleProvider? _speedSampleProvider;
+        //private SpeedSampleProvider? _speedSampleProvider;
+        private SoundTouchSampleProvider? _sampleProvider;
         private AudioFileReader? _audioFileReader;
 
-        public bool IsReady => (_speedSampleProvider != null && _audioFileReader != null);
+        public bool IsReady => (_sampleProvider != null && _audioFileReader != null);
 
         public int ForwardPlaybackRewindDelta { get; private init; } = 9;
         public int BackwardPlaybackRewindDelta { get; private init; } = -9;
 
         public float PlaybackSpeed
         {
-            get => _speedSampleProvider?.Speed ?? 1f;
+            get => _sampleProvider?.Speed ?? 1f;
             set
             {
-                if (_speedSampleProvider != null)
-                    _speedSampleProvider.Speed = value;
+                if (_sampleProvider != null)
+                    _sampleProvider.Speed = value;
             }
         }
 
@@ -69,8 +70,8 @@ namespace Player.Service
             };
 
             _audioFileReader = new AudioFileReader(filePath);
-            _speedSampleProvider = new SpeedSampleProvider(_audioFileReader.ToSampleProvider(), prevSpeed);
-            _outputDevice.Init(_speedSampleProvider);
+            _sampleProvider = new SoundTouchSampleProvider(processor: new SoundTouch.SoundTouchProcessor(), _audioFileReader.ToSampleProvider(), 2, prevSpeed);
+            _outputDevice.Init(_sampleProvider);
         }
 
         public void ReloadAndPlay(string filePath, float prevSpeed)
@@ -106,7 +107,7 @@ namespace Player.Service
             _audioFileReader?.Dispose();
             _audioFileReader = null;
 
-            _speedSampleProvider = null;
+            _sampleProvider = null;
         }
 
         public void Play()
