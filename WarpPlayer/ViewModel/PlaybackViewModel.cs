@@ -31,22 +31,24 @@ namespace Player.ViewModel
         public Symbol PlayPauseIcon => PlaybackState == PlaybackState.Playing ? Symbol.Pause : Symbol.Play;
         public Symbol PlaylistButtonIcon => PlaylistVisibility == Visibility.Visible ? Symbol.ClosePane : Symbol.OpenPane;
         public Symbol VolumeStateIcon => _playbackService.VolumeState == VolumeState.Unmuted ? Symbol.Volume : Symbol.Mute;
-        public Symbol PlaybackButtonIcon => PlaybackMode switch
+        public Symbol PlaybackModeIcon => PlaybackMode switch
         {
             PlaybackMode.Normal => Symbol.Forward,
             PlaybackMode.Shuffle => Symbol.Shuffle,
+            PlaybackMode.RepeatOne => Symbol.RepeatOne,
             PlaybackMode.RepeatAll => Symbol.RepeatAll,
             _ => Symbol.Forward
         };
 
         string startPart = "Текущий режим плеера: ";
-        public string PlaybackButtonToolTip
+        public string PlaybackModeToolTip
         {
             get => PlaybackMode switch
             {
                 PlaybackMode.Normal => startPart + "обычный",
                 PlaybackMode.Shuffle => startPart + "перемешать",
-                PlaybackMode.RepeatAll => startPart + "повтор",
+                PlaybackMode.RepeatOne => startPart + "повторять этот трек",
+                PlaybackMode.RepeatAll => startPart + "повторять все",
                 _ => startPart + "обычный"
             };
         }
@@ -192,7 +194,15 @@ namespace Player.ViewModel
                 }
                 else
                 {
-                    _ = NextTrack();
+                    if (PlaybackMode == PlaybackMode.RepeatOne)
+                    {
+                        Stop();
+                        Play();
+                    }
+                    else
+                    {
+                        _ = NextTrack();
+                    }
                 }
             }
 
@@ -643,7 +653,7 @@ namespace Player.ViewModel
         public void TogglePlaybackMode()
         {
             _playbackQueue.TogglePlaybackMode();
-            OnPropertyChanged(nameof(PlaybackMode), nameof(PlaybackButtonIcon), nameof(PlaybackButtonToolTip));
+            OnPropertyChanged(nameof(PlaybackMode), nameof(PlaybackModeIcon), nameof(PlaybackModeToolTip));
         }
 
         public string GetCurrentTrackName()

@@ -9,8 +9,9 @@ namespace Player.Utils
     public enum PlaybackMode
     {
         Normal,
+        RepeatOne,
         RepeatAll,
-        Shuffle
+        Shuffle,
     }
 
     public class PlaybackQueue
@@ -27,10 +28,7 @@ namespace Player.Utils
 
         public bool IsCurrentValid => IsValidIndex(_currentIndex);
 
-        public bool IsFirst => IsCurrentValid && _currentIndex == 0;
         public bool IsLast => IsCurrentValid && _currentIndex == _tracks.Count - 1;
-
-        public bool HasPrevious => _previousTracks.Count > 0;
 
         public TrackRecord? Current => IsCurrentValid ? _tracks[_currentIndex] : null;
         public void TogglePlaybackMode()
@@ -38,7 +36,8 @@ namespace Player.Utils
             PlaybackMode = PlaybackMode switch
             {
                 PlaybackMode.Normal => PlaybackMode.Shuffle,
-                PlaybackMode.Shuffle => PlaybackMode.RepeatAll,
+                PlaybackMode.Shuffle => PlaybackMode.RepeatOne,
+                PlaybackMode.RepeatOne => PlaybackMode.RepeatAll,
                 PlaybackMode.RepeatAll => PlaybackMode.Normal,
                 _ => PlaybackMode.Normal
             };

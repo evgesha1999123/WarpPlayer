@@ -271,8 +271,8 @@
 
             <Button
                 Command="{x:Bind PlaybackVM.TogglePlaybackModeCommand}"
-                ToolTipService.ToolTip="{x:Bind PlaybackVM.PlaybackButtonToolTip, Mode=OneWay}">
-                <SymbolIcon Symbol="{x:Bind PlaybackVM.PlaybackButtonIcon, Mode=OneWay}"/>
+                ToolTipService.ToolTip="{x:Bind PlaybackVM.PlaybackModeToolTip, Mode=OneWay}">
+                <SymbolIcon Symbol="{x:Bind PlaybackVM.PlaybackModeIcon, Mode=OneWay}"/>
             </Button>
 
             <!-- Длительность -->
