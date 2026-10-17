@@ -1,7 +1,6 @@
 ﻿using NAudio.Wave;
 using System;
 using System.Diagnostics;
-using Player.Utils;
 
 
 namespace Player.Service
@@ -15,7 +14,6 @@ namespace Player.Service
     public class PlaybackService : IPlayable
     {
         private WaveOutEvent? _outputDevice;
-        //private SpeedSampleProvider? _speedSampleProvider;
         private SoundTouchSampleProvider? _sampleProvider;
         private AudioFileReader? _audioFileReader;
 

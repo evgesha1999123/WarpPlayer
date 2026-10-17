@@ -16,6 +16,7 @@ using Player.Utils;
 using Player.Utils.File;
 using static Player.Utils.File.FilePicker;
 using System.Diagnostics;
+using static Player.Service.MediaLibraryService;
 
 
 namespace Player.ViewModel
@@ -564,19 +565,37 @@ namespace Player.ViewModel
         private async Task InitializeNewTracks(IReadOnlyList<string> files)
         {
             var importResponse = _mediaLibraryService.ImportTracks(files);
-            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(importResponse.TrackRecords);
+
+            bool isPlaybackServiceInitedNow = await LoadTracksAndGetPlaylistStatus(importResponse.Success);
 
             if (isPlaybackServiceInitedNow)
             {
                 OnPropertyChanged(nameof(CurrentTrackNameUI));
             }
 
-            if (importResponse.Skipped > 0)
+            SetNotificationMessage(GetImportMsg(importResponse));
+        }
+
+        private static string GetImportMsg(ImportResponse importResponse)
+        {
+            string message = "";
+
+            if (importResponse.Success.Count > 0)
             {
-                SetNotificationMessage($"Треков загружено: {importResponse.TrackRecords.Count}. Пропущено дубликатов: {importResponse.Skipped}");
-            } else {
-                SetNotificationMessage($"Треков загружено: {importResponse.TrackRecords.Count}");
+                message += $"Треков загружено: {importResponse.Success.Count}.";
             }
+
+            if (importResponse.DuplicatesCount > 0)
+            {
+                message += $"Пропущено дубликатов: {importResponse.DuplicatesCount}.";
+            }
+
+            if (importResponse.ErrorCount > 0)
+            {
+                message += $"Пропущено с ошибками: {importResponse.ErrorCount}.";
+            }
+
+            return message;
         }
 
         [RelayCommand]
