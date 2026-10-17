@@ -75,7 +75,6 @@ namespace Player
 
             services.AddSingleton<MediaLibraryService>();
 
-            services.AddSingleton<FileValidator>();
             services.AddTransient<PlaybackViewModel>();
 
             services.AddSingleton<MainWindow>();

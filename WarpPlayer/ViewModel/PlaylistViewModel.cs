@@ -71,11 +71,6 @@ namespace Player.ViewModel
             track.Activate();
 
             PreviousActiveTrack = CurrentActiveTrack;
-
-            Debug.WriteLine(
-                $"Prev: {PreviousActiveTrack?.Trecord.FilePath.Split('/')[^1] ?? "null"} " +
-                $"| Current: {CurrentActiveTrack.Trecord.FilePath.Split('/')[^1]}"
-            );
         }
 
         public TrackViewModel? GetCurrentActiveView()

@@ -74,7 +74,6 @@ namespace Player.ViewModel
             IsActive = true;
             NotifyPlaybackStatus();
             NotifyActivityStatus();
-            Debug.WriteLine($"Activated '{Trecord.FilePath}'");
         }
 
         public void Deactivate()

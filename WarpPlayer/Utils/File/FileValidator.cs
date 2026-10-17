@@ -8,10 +8,5 @@ namespace Player.Utils.File
         {
             return path != null ? System.IO.File.Exists(path) : false;
         }
-
-        public static void CheckFormat()
-        {
-
-        }
     }
 }

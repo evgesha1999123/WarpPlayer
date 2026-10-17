@@ -96,7 +96,6 @@ namespace Player.ViewModel
         private readonly MediaLibraryService _mediaLibraryService;
         private readonly PlaybackQueue _playbackQueue;
         private readonly FilePicker _filePicker;
-        private readonly FileValidator _fileValidator;
         private readonly DispatcherQueueTimer _playbackTimer;
         private bool CanStartPlayback => _playbackService.CanStartPlaypack;
         private bool CanPausePlayback => _playbackService.CanPausePlayback;
@@ -105,12 +104,11 @@ namespace Player.ViewModel
 
         public PlaylistViewModel PlaylistVM;
 
-        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker, FileValidator fileValidator)
+        public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker)
         {
             _playbackService = playbackService;
             _mediaLibraryService = mediaLibraryService;
             _playbackQueue = playbackQueue;
-            _fileValidator = fileValidator;
 
             ForwardPlaybackRewindDelta = playbackService.ForwardPlaybackRewindDelta;
             BackwardPlaybackRewindDelta = playbackService.BackwardPlaybackRewindDelta;
@@ -233,7 +231,6 @@ namespace Player.ViewModel
         public void Play()
         {
             var currentTrack = _playbackQueue.Current;
-            Debug.WriteLine($"current track: {currentTrack?.FilePath ?? "null"}");
 
             if (currentTrack == null)
             {
@@ -258,8 +255,6 @@ namespace Player.ViewModel
 
         private void HandleMissingTrack(TrackRecord track)
         {
-            Debug.WriteLine($"Track file is missing: {track.FilePath}");
-
             _playbackQueue.InvalidateCurrent();
             PlaylistVM.RemoveTrackSilently(track);
 
@@ -274,7 +269,6 @@ namespace Player.ViewModel
         public async Task PlayAsync()
         {
             var currentTrack = _playbackQueue.Current;
-            Debug.WriteLine($"current track: {currentTrack?.FilePath ?? "null"}");
 
             if (currentTrack == null)
             {
@@ -353,8 +347,6 @@ namespace Player.ViewModel
         {
             var track = _playbackQueue.GetNext();
 
-            Debug.WriteLine($"Next: {track?.FilePath ?? "null"}");
-
             if (track == null)
                 return;
 
@@ -366,8 +358,6 @@ namespace Player.ViewModel
         public async Task PreviousTrack()
         {
             var track = _playbackQueue.GetPrevious();
-
-            Debug.WriteLine($"Previous: {track?.FilePath ?? "null"}");
 
             if (track == null)
                 return;
@@ -445,7 +435,6 @@ namespace Player.ViewModel
 
             if (!_playbackQueue.SetCurrent(track.FilePath))
             {
-                Debug.WriteLine($"Track is not present in playback queue: {track.FilePath}");
                 return;
             }
 

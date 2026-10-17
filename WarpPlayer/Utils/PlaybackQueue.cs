@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Player.Schema;
+
 
 namespace Player.Utils
 {
@@ -14,6 +16,8 @@ namespace Player.Utils
     public class PlaybackQueue
     {
         private readonly List<TrackRecord> _tracks = [];
+        private readonly List<TrackRecord> _previousTracks = [];
+        private const int MAX_PREVIOUS_QUEUE_CAPACITY = 255;
         private int _currentIndex = -1;
 
         public PlaybackMode PlaybackMode { get; private set; } = PlaybackMode.Normal;
@@ -23,34 +27,12 @@ namespace Player.Utils
 
         public bool IsCurrentValid => IsValidIndex(_currentIndex);
 
-        public bool IsFirst =>
-            IsCurrentValid && _currentIndex == 0;
+        public bool IsFirst => IsCurrentValid && _currentIndex == 0;
+        public bool IsLast => IsCurrentValid && _currentIndex == _tracks.Count - 1;
 
-        public bool IsLast =>
-            IsCurrentValid && _currentIndex == _tracks.Count - 1;
-
-        public bool HasNext =>
-            Size > 0 &&
-            (
-                !IsCurrentValid ||
-                _currentIndex < _tracks.Count - 1 ||
-                PlaybackMode == PlaybackMode.RepeatAll ||
-                PlaybackMode == PlaybackMode.Shuffle
-            );
-
-        public bool HasPrevious =>
-            Size > 0 &&
-            (
-                !IsCurrentValid ||
-                _currentIndex > 0 ||
-                PlaybackMode == PlaybackMode.RepeatAll ||
-                PlaybackMode == PlaybackMode.Shuffle
-            );
+        public bool HasPrevious => _previousTracks.Count > 0;
 
         public TrackRecord? Current => IsCurrentValid ? _tracks[_currentIndex] : null;
-
-        public int CurrentIndex => _currentIndex;
-
         public void TogglePlaybackMode()
         {
             PlaybackMode = PlaybackMode switch
@@ -86,6 +68,7 @@ namespace Player.Utils
             var deletingCurrent = index == _currentIndex;
 
             _tracks.RemoveAt(index);
+            _previousTracks.Remove(track);
 
             if (IsEmpty)
             {
@@ -126,35 +109,50 @@ namespace Player.Utils
                 return null;
 
             if (PlaybackMode == PlaybackMode.Shuffle)
-            {
-                return MoveShuffle();
-            }
+                return MoveShuffleMode(direction);
 
-            // Sentinel state:
-            // current отсутствует, но очередь не пустая.
-            //
-            // Next  -> первый трек.
-            // Previous -> последний трек.
             if (!IsCurrentValid)
-            {
-                _currentIndex = direction > 0 ? 0 : _tracks.Count - 1;
-                return _tracks[_currentIndex];
-            }
+                return SetCurrentByDirection(direction);
 
             var newIndex = _currentIndex + direction;
 
             if (PlaybackMode == PlaybackMode.RepeatAll)
-            {
                 newIndex = (newIndex + Size) % Size;
-            }
+
             else if (!IsValidIndex(newIndex))
-            {
                 return null;
-            }
 
             _currentIndex = newIndex;
+            return Current;
+        }
 
-            return _tracks[_currentIndex];
+        private TrackRecord? MoveShuffleMode(int direction)
+        {
+            if (direction < 0)
+                return MoveToPreviousShuffleTrack();
+
+            if (IsCurrentValid)
+                PushPrevious(Current!);
+
+            return MoveShuffle();
+        }
+
+        private TrackRecord? MoveToPreviousShuffleTrack()
+        {
+            var previous = PopPrevious();
+
+            if (previous is null)
+                return null;
+
+            _currentIndex = _tracks.IndexOf(previous);
+
+            return IsCurrentValid ? Current : null;
+        }
+
+        private TrackRecord SetCurrentByDirection(int direction)
+        {
+            _currentIndex = direction > 0 ? 0 : Size - 1;
+            return Current!;
         }
 
         private TrackRecord MoveShuffle()
@@ -189,11 +187,39 @@ namespace Player.Utils
             if (index < 0)
                 return false;
 
+            if (index == _currentIndex)
+                return true;
+
+            if (PlaybackMode == PlaybackMode.Shuffle && IsCurrentValid)
+            {
+                PushPrevious(_tracks[_currentIndex]);
+            }
+
             _currentIndex = index;
             return true;
         }
 
         public IReadOnlyList<TrackRecord> GetTracks() => _tracks;
+
+        private void PushPrevious(TrackRecord track)
+        {
+            if (_previousTracks.Count >= MAX_PREVIOUS_QUEUE_CAPACITY)
+            {
+                _previousTracks.RemoveAt(0);
+            }
+            _previousTracks.Add(track);
+        }
+
+        private TrackRecord? PopPrevious()
+        {
+            if (_previousTracks.Count > 0)
+            {
+                TrackRecord track = _previousTracks[^1];
+                _previousTracks.RemoveAt(_previousTracks.Count - 1);
+                return track;
+            }
+            return null;
+        }
 
         public TrackRecord? GetTrackAfterCurrentIsRemoved()
         {
@@ -216,6 +242,7 @@ namespace Player.Utils
         public void Clear()
         {
             _tracks.Clear();
+            _previousTracks.Clear();
             InvalidateCurrent();
         }
 
