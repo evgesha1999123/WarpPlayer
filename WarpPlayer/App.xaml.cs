@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.Windows.AI.MachineLearning;
 using System;
 using System.Diagnostics;
 using Player.Database;
@@ -64,6 +63,7 @@ namespace Player
             });
 
             services.AddSingleton<ITrackRepository<Track, TrackRecord>, TrackRepository>();
+            services.AddSingleton<IPlaylistRepository<Playlist, PlaylistRecord>, PlaylistRepository>();
 
             services.AddSingleton<FilePicker>();
 

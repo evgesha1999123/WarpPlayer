@@ -297,6 +297,8 @@
             TextWrapping="NoWrap"
             IsHitTestVisible="False" />
 
+        <Button Content="create playlist" Command="{x:Bind PlaybackVM.CreatePlaylistCommand}"/>
+
     </Grid>
 
 </Window>

@@ -66,12 +66,20 @@ namespace Player.Service
 
         private readonly FileLoader _fileLoader;
         private readonly ITrackRepository<Track, TrackRecord> _trackRepository;
+        private readonly IPlaylistRepository<Playlist, PlaylistRecord> _playlistRepository;
         private readonly DatabaseHealthChecker _databaseHealthChecker;
 
-        public MediaLibraryService(FileLoader fileLoader, ITrackRepository<Track, TrackRecord> trackRepository, DatabaseHealthChecker dbHealthChecker)
+        public MediaLibraryService(
+            FileLoader fileLoader, 
+            ITrackRepository<Track, TrackRecord> 
+            trackRepository, 
+            DatabaseHealthChecker dbHealthChecker,
+            IPlaylistRepository<Playlist, PlaylistRecord> playlistRepository
+        )
         {
             _fileLoader = fileLoader;
             _trackRepository = trackRepository;
+            _playlistRepository = playlistRepository;
             _databaseHealthChecker = dbHealthChecker;
 
             _databaseHealthChecker.CheckTablesExists();
@@ -82,10 +90,10 @@ namespace Player.Service
             return await _fileLoader.GetImageAsync(imgBytes);
         }
 
-        //public PlaylistRecord CreatePlaylist(Playlist playlist)
-        //{
-        //    //...
-        //}
+        public PlaylistRecord CreatePlaylist(Playlist playlist)
+        {
+            return _playlistRepository.Create(playlist);
+        }
 
         //public PlaylistRecord GetPlaylist(string id)
         //{

@@ -662,5 +662,16 @@ namespace Player.ViewModel
             return track != null ? $"{track?.Artist} - {track?.Title}" : " ";
         }
 
+        [RelayCommand]
+        public void CreatePlaylist()
+        {
+            _mediaLibraryService.CreatePlaylist(
+                new Playlist
+                {
+                    Name = "Sus",
+                    Description = "This"
+                }
+            );
+        }
     }
 }
