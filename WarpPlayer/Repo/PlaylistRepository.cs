@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 using Player.Database;
 using Player.Schema;
 using System;
@@ -142,7 +140,7 @@ namespace Player.Repo
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
 
-            var parameters = ids.Select((id, i) => new { id, name = $"id{i}" }).ToList();
+            var parameters = ids.Select((id, i) => new { id, name = $"$id{i}" }).ToList();
             string paramsSql = $"{string.Join(", ", parameters.Select(x => x.name))}";
 
             command.CommandText = $"delete from Playlist where PlaylistId in ({paramsSql});";
@@ -189,12 +187,51 @@ namespace Player.Repo
 
         public IReadOnlyList<PlaylistRecord> GetAll()
         {
-            throw new NotImplementedException();
+            using var connection = _connectionFactory.Create();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "select * from Playlist;";
+            command.ExecuteNonQuery();
+
+            using var reader = command.ExecuteReader();
+
+            List<PlaylistRecord> result = [];
+
+            while (reader.Read())
+            {
+                result.Add(GetModelFrom(reader));
+            }
+
+            return result;
         }
 
         public IReadOnlyList<PlaylistRecord> GetMany(IReadOnlyCollection<Guid> ids)
         {
-            throw new NotImplementedException();
+            using var connection = _connectionFactory.Create();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+
+            var parameters = ids.Select((id, i) => new { id, name = $"$id{i}" }).ToList();
+            string sqlParams = string.Join(", ", parameters.Select(x => x.name));
+
+            foreach (var parameter in parameters)
+            {
+                command.Parameters.AddWithValue(parameter.name, parameter.id.ToString());
+            }
+
+            command.CommandText = $"select * from Playlist where PlaylistId in ({sqlParams});";
+            using var reader = command.ExecuteReader();
+
+            List<PlaylistRecord> result = [];
+
+            while (reader.Read())
+            {
+                result.Add(GetModelFrom(reader));
+            }
+
+            return result;
         }
     }
 }

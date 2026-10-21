@@ -17,7 +17,7 @@ namespace Player.Repo
         public long UpdatedAt { get; init; }
     }
 
-    class TrackRepository : ITrackRepository<Track, TrackRecord>
+    public class TrackRepository : ITrackRepository<Track, TrackRecord>
     {
         private readonly ISqliteConnectionFactory _connectionFactory;
         private readonly object NULL = (object)DBNull.Value;
@@ -117,31 +117,18 @@ namespace Player.Repo
         private void PutParametersToCommand(Track file, TrackIdentity trackIdentity, SqliteCommand command) 
         {
             command.Parameters.AddWithValue("$TrackId", trackIdentity.TrackId.ToString());
-
             command.Parameters.AddWithValue("$Title", file.Title);
-
             command.Parameters.AddWithValue("$Cover", file.Cover ?? NULL);
-
             command.Parameters.AddWithValue("$Artist", file.Artist);
-
             command.Parameters.AddWithValue("$Album", file.Album ?? NULL);
-
             command.Parameters.AddWithValue("$AlbumArtist", file.AlbumArtist ?? NULL);
-
             command.Parameters.AddWithValue("$Duration", (int)file.Duration.TotalSeconds);
-
             command.Parameters.AddWithValue("$FilePath", file.FilePath);
-
             command.Parameters.AddWithValue("$Genres", JsonSerializer.Serialize(file.Genres));
-
             command.Parameters.AddWithValue("$Year", file.Year ?? NULL);
-
             command.Parameters.AddWithValue("$TrackNumber", file.TrackNumber ?? NULL);
-
             command.Parameters.AddWithValue("$DiscNumber", file.DiscNumber ?? NULL);
-
             command.Parameters.AddWithValue("$CreatedAt", trackIdentity.CreatedAt);
-
             command.Parameters.AddWithValue("$UpdatedAt", trackIdentity.UpdatedAt);
         }
 
@@ -203,7 +190,7 @@ namespace Player.Repo
             connection.Open();
 
             using var command = connection.CreateCommand();
-            var parameters = ids.Select((id, i) => new { id, name = $"id{i}" }).ToList();
+            var parameters = ids.Select((id, i) => new { id, name = $"$id{i}" }).ToList();
             string params_sql = $"{string.Join(", ", parameters.Select(x => x.name))}";
 
             command.CommandText = $"delete from Track where TrackId in ({params_sql})";
@@ -262,7 +249,7 @@ namespace Player.Repo
 
             using var command = connection.CreateCommand();
 
-            var parameters = ids.Select((id, i) => new { id, name = $"id{i}" }).ToList();
+            var parameters = ids.Select((id, i) => new { id, name = $"$id{i}" }).ToList();
             string sql_params = string.Join(", ", parameters.Select(x => x.name));
 
             command.CommandText = $"select * from Track where TrackId in ({sql_params})";

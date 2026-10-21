@@ -10,4 +10,5 @@
     <Platform Solution="*|x86" Project="x86" />
     <Deploy />
   </Project>
+  <Project Path="WarpPlayerTest/WarpPlayerTest.csproj" Id="972db7d4-9cf8-4e98-bddb-c3775afcdff6" />
 </Solution>
