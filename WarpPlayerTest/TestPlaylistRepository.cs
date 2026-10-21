@@ -1,68 +1,34 @@
-﻿
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
 using Player.Database;
+using Player.DependencyInjection;
 using Player.Repo;
 using Player.Schema;
+using Player.Utils.Helper;
 using System.Diagnostics;
-
 
 
 namespace Player.Tests;
 
-internal sealed class TestSqliteConnectionFactory
-    : ISqliteConnectionFactory
-{
-    private readonly string _connectionString;
-
-    public TestSqliteConnectionFactory(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
-
-    public SqliteConnection Create()
-    {
-        return new SqliteConnection(_connectionString);
-    }
-}
-
 public sealed class PlaylistRepositoryTests : IDisposable
 {
+    private readonly ServiceProvider _serviceProvider;
     private readonly string _databasePath;
-    private readonly TestSqliteConnectionFactory _factory;
+    private readonly ISqliteConnectionFactory _factory;
+    private readonly DatabaseHealthChecker _healthChecker;
     private readonly PlaylistRepository _repository;
 
     public PlaylistRepositoryTests()
     {
-        _databasePath = Path.Combine(
-            Path.GetTempPath(),
-            $"playlist-tests-{Guid.NewGuid():N}.db");
+        _databasePath = Path.Combine(Path.GetTempPath(), $"playlist-tests-{Guid.NewGuid():N}.db");
 
-        _factory = new TestSqliteConnectionFactory(
-            $"Data Source={_databasePath}");
+        _serviceProvider = TestServices.Build(_databasePath);
 
-        InitializeDatabase();
+        _factory = _serviceProvider.GetRequiredService<ISqliteConnectionFactory>();
+        _healthChecker = _serviceProvider.GetRequiredService<DatabaseHealthChecker>();
 
+        _healthChecker.EnsurePlaylistTableCreated();
         _repository = new PlaylistRepository(_factory);
-    }
-
-    private void InitializeDatabase()
-    {
-        using var connection = _factory.Create();
-        connection.Open();
-
-        using var command = connection.CreateCommand();
-
-        command.CommandText = """
-            CREATE TABLE Playlist (
-                PlaylistId TEXT PRIMARY KEY NOT NULL,
-                Name TEXT NOT NULL,
-                Description TEXT NULL,
-                CreatedAt INTEGER NOT NULL,
-                UpdatedAt INTEGER NOT NULL
-            );
-            """;
-
-        command.ExecuteNonQuery();
     }
 
     private static Playlist MakePlaylist(

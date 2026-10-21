@@ -1,74 +1,34 @@
 ﻿using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
 using Player.Database;
+using Player.DependencyInjection;
 using Player.Repo;
 using Player.Schema;
-
+using Player.Utils.Helper;
+using WarpPlayerTest;
 
 namespace Player.Tests;
 
-internal sealed class TestTrackConnectionFactory
-    : ISqliteConnectionFactory
-{
-    private readonly string _connectionString;
-
-    public TestTrackConnectionFactory(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
-
-    public SqliteConnection Create()
-    {
-        return new SqliteConnection(_connectionString);
-    }
-}
 
 public sealed class TrackRepositoryTests : IDisposable
 {
+    private ServiceProvider _serviceProvider;
     private readonly string _databasePath;
-    private readonly TestTrackConnectionFactory _factory;
+    private readonly ISqliteConnectionFactory _factory;
+    private readonly DatabaseHealthChecker _healthChecker;
     private readonly TrackRepository _repository;
 
     public TrackRepositoryTests()
     {
-        _databasePath = Path.Combine(
-            Path.GetTempPath(),
-            $"track-tests-{Guid.NewGuid():N}.db");
+        _databasePath = Path.Combine(Path.GetTempPath(), $"track-tests-{Guid.NewGuid():N}.db");
+        _serviceProvider = TestServices.Build(_databasePath);
 
-        _factory = new TestTrackConnectionFactory(
-            $"Data Source={_databasePath}");
+        _factory = _serviceProvider.GetRequiredService<ISqliteConnectionFactory>();
+        _healthChecker = _serviceProvider.GetRequiredService<DatabaseHealthChecker>();
 
-        InitializeDatabase();
+        _healthChecker.EnsureTrackTableCreated();
 
         _repository = new TrackRepository(_factory);
-    }
-
-    private void InitializeDatabase()
-    {
-        using var connection = _factory.Create();
-        connection.Open();
-
-        using var command = connection.CreateCommand();
-
-        command.CommandText = """
-            CREATE TABLE Track (
-                TrackId TEXT PRIMARY KEY NOT NULL,
-                Title TEXT NOT NULL,
-                Cover BLOB NOT NULL,
-                Artist TEXT NOT NULL,
-                Album TEXT NULL,
-                AlbumArtist TEXT NULL,
-                Duration INTEGER NOT NULL,
-                FilePath TEXT NOT NULL,
-                Genres TEXT NOT NULL,
-                Year INTEGER NULL,
-                TrackNumber INTEGER NULL,
-                DiscNumber INTEGER NULL,
-                CreatedAt INTEGER NOT NULL,
-                UpdatedAt INTEGER NOT NULL
-            );
-            """;
-
-        command.ExecuteNonQuery();
     }
 
     private static Track MakeTrack(

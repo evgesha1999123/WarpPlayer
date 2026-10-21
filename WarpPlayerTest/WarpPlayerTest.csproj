@@ -15,6 +15,28 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
   </ItemGroup>
+  
+  <ItemGroup>
+	  <Content Include="..\WarpPlayer\Database\Helper\Query\CreateIfNotExists\Playlist.sql">
+		  <Link>Database\Helper\Query\CreateIfNotExists\Playlist.sql</Link>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+
+	  <Content Include="..\WarpPlayer\Database\Helper\Query\CreateIfNotExists\PlaylistTrack.sql">
+		  <Link>Database\Helper\Query\CreateIfNotExists\PlaylistTrack.sql</Link>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+
+	  <Content Include="..\WarpPlayer\Database\Helper\Query\CreateIfNotExists\Track.sql">
+		  <Link>Database\Helper\Query\CreateIfNotExists\Track.sql</Link>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+
+	  <Content Include="..\WarpPlayer\ResourceManifest.xml">
+		  <Link>ResourceManifest.xml</Link>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
