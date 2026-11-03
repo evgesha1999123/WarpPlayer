@@ -8,7 +8,6 @@ using Player.Schema;
 using Player.Utils.File;
 using Player.Utils.Helper;
 using static Player.Utils.File.FileLoader;
-using Microsoft.UI.Xaml.Controls;
 
 
 namespace Player.Service
@@ -82,7 +81,7 @@ namespace Player.Service
             _playlistRepository = playlistRepository;
             _databaseHealthChecker = dbHealthChecker;
 
-            _databaseHealthChecker.CheckTablesExists();
+            _databaseHealthChecker.CheckAllTablesExists();
         }
 
         public async Task<BitmapImage> GetCoverArt(byte[] imgBytes)

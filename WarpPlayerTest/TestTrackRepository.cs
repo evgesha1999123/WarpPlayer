@@ -5,7 +5,6 @@ using Player.DependencyInjection;
 using Player.Repo;
 using Player.Schema;
 using Player.Utils.Helper;
-using WarpPlayerTest;
 
 namespace Player.Tests;
 

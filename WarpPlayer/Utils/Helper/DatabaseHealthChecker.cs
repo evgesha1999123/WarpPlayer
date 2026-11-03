@@ -24,7 +24,7 @@ namespace Player.Utils.Helper
             CreatePlaylistTrackTableSql = System.IO.File.ReadAllText(Database.Settings["PlaylistTrack"]);
         }
 
-        public bool CheckTablesExists()
+        public bool CheckAllTablesExists()
         {
             using var connection = _connectionFactory.Create();
             connection.Open();

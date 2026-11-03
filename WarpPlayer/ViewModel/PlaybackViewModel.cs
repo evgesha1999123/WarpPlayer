@@ -88,6 +88,8 @@ namespace Player.ViewModel
             set => _playbackService.PlaybackSpeed = value;
         }
 
+        private float PrevPlaybackSpeed { get; set; }
+
         public float Volume
         {
             get => _playbackService.GetVolume();
@@ -133,6 +135,8 @@ namespace Player.ViewModel
             } else {
                 SetNotificationMessage("Импортируйте файлы для добавления в плейлист");
             }
+
+            PrevPlaybackSpeed = PlaybackSpeed;
 
             PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, this);
 
@@ -329,7 +333,9 @@ namespace Player.ViewModel
 
         public void StopEmpty() 
         {
-            EnsureTimerStopped(_playbackTimer); 
+            EnsureTimerStopped(_playbackTimer);
+            PrevPlaybackSpeed = PlaybackSpeed;
+            Debug.WriteLine($"Prev speed = {PrevPlaybackSpeed}");
             _playbackService.Unload();
             CoverArt = null;
             OnPropertyChanged(
@@ -342,7 +348,8 @@ namespace Player.ViewModel
                 nameof(TrackDurationUI),
                 nameof(CurrentTrackNameUI), 
                 nameof(CoverArt)
-            ); 
+            );
+            Debug.WriteLine($"New speed = {PrevPlaybackSpeed}");
         }
 
         [RelayCommand]
@@ -625,7 +632,7 @@ namespace Player.ViewModel
             if (!_playbackService.IsReady && tracks.Count > 0)
             {
                 var track = tracks[0];
-                _playbackService.Init(track.FilePath, PlaybackSpeed);
+                _playbackService.Init(track.FilePath, PrevPlaybackSpeed);
                 await GetCoverArtAsync(track.Cover);
                 
                 wasPlaybackInitializedNow = true;
@@ -662,16 +669,16 @@ namespace Player.ViewModel
             return track != null ? $"{track?.Artist} - {track?.Title}" : " ";
         }
 
-        [RelayCommand]
-        public void CreatePlaylist()
-        {
-            _mediaLibraryService.CreatePlaylist(
-                new Playlist
-                {
-                    Name = "Sus",
-                    Description = "This"
-                }
-            );
-        }
+        //[RelayCommand]
+        //public void CreatePlaylist()
+        //{
+        //    _mediaLibraryService.CreatePlaylist(
+        //        new Playlist
+        //        {
+        //            Name = "Sus",
+        //            Description = "This"
+        //        }
+        //    );
+        //}
     }
 }
