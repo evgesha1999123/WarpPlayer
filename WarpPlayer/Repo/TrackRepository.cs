@@ -25,7 +25,7 @@ namespace Player.Repo
         {
             _connectionFactory = connectionFactory;
         }
-        public TrackRecord Create(Track file)
+        public TrackRecord Create(Track track)
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
@@ -34,10 +34,10 @@ namespace Player.Repo
             command.CommandText = GetCreateSql();
 
             TrackIdentity trackIdentity = GenerateTrackIdentity();
-            PutParametersToCommand(file, trackIdentity, command);
+            PutParametersToCommand(track, trackIdentity, command);
             command.ExecuteNonQuery();
 
-            return BuildTrackRecordFrom(file, trackIdentity);
+            return BuildTrackRecordFrom(track, trackIdentity);
         }
 
         private TrackIdentity GenerateTrackIdentity()
@@ -52,22 +52,22 @@ namespace Player.Repo
             };
         }
 
-        private TrackRecord BuildTrackRecordFrom(Track file, TrackIdentity trackIdentity)
+        private TrackRecord BuildTrackRecordFrom(Track track, TrackIdentity trackIdentity)
         {
             return new TrackRecord
             {
                 TrackId = trackIdentity.TrackId,
-                Title = file.Title,
-                Cover = file.Cover,
-                Artist = file.Artist,
-                Album = file.Album,
-                AlbumArtist = file.AlbumArtist,
-                Duration = file.Duration,
-                FilePath = file.FilePath,
-                Genres = file.Genres,
-                Year = file.Year,
-                TrackNumber = file.TrackNumber,
-                DiscNumber = file.DiscNumber,
+                Title = track.Title,
+                Cover = track.Cover,
+                Artist = track.Artist,
+                Album = track.Album,
+                AlbumArtist = track.AlbumArtist,
+                Duration = track.Duration,
+                FilePath = track.FilePath,
+                Genres = track.Genres,
+                Year = track.Year,
+                TrackNumber = track.TrackNumber,
+                DiscNumber = track.DiscNumber,
                 CreatedAt = DateTimeOffset.FromUnixTimeSeconds(trackIdentity.CreatedAt).UtcDateTime,
                 UpdatedAt = DateTimeOffset.FromUnixTimeSeconds(trackIdentity.UpdatedAt).UtcDateTime,
             };
