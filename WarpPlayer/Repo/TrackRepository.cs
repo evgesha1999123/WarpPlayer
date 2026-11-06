@@ -277,9 +277,9 @@ namespace Player.Repo
             {
                 TrackId = Guid.Parse(reader["TrackId"].ToString()!),
 
-                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(int.Parse(reader["CreatedAt"].ToString()!)).UtcDateTime,
+                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(reader["CreatedAt"].ToString()!)).UtcDateTime,
 
-                UpdatedAt = DateTimeOffset.FromUnixTimeSeconds(int.Parse(reader["UpdatedAt"].ToString()!)).UtcDateTime,
+                UpdatedAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(reader["UpdatedAt"].ToString()!)).UtcDateTime,
 
                 Title = (string)reader["Title"],
 

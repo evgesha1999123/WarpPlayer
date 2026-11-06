@@ -4,33 +4,52 @@ using Player.Service;
 using Player.Utils;
 using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 
 namespace Player.ViewModel
 {
-    public class PlaylistViewModel
+    public class PlaylistContainerViewModel : INotifyPropertyChanged
     {
         public Visibility Visibility;
         public ObservableCollection<TrackViewModel> Tracks { get; } = [];
         public MediaLibraryService Library { get; }
         public PlaybackQueue PlaybackQ;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public Visibility TracksVisibility => Tracks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility EmptyPlaceholderVisibility => Tracks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         private readonly PlaybackViewModel _playbackVM;
 
         private TrackViewModel? CurrentActiveTrack;
-        private TrackViewModel? PreviousActiveTrack; 
+        private TrackViewModel? PreviousActiveTrack;
 
 
-        public PlaylistViewModel(Visibility visibility, MediaLibraryService mediaLibrary, PlaybackQueue playbackQ, PlaybackViewModel playbackVM)
+        public PlaylistContainerViewModel(Visibility visibility, MediaLibraryService mediaLibrary, PlaybackQueue playbackQ, PlaybackViewModel playbackVM)
         {
             Visibility = visibility;
             Library = mediaLibrary;
             PlaybackQ = playbackQ;
             _playbackVM = playbackVM;
 
+            Tracks.CollectionChanged += OnTracksCollectionChanged;
+
             InitExistingTracks();
+        }
+
+        private void OnTracksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(TracksVisibility));
+            OnPropertyChanged(nameof(EmptyPlaceholderVisibility));
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private void InitExistingTracks()

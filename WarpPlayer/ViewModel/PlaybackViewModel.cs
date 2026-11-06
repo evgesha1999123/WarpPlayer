@@ -63,8 +63,8 @@ namespace Player.ViewModel
 
         public Visibility PlaylistVisibility
         {
-            get => PlaylistVM.Visibility;
-            set => PlaylistVM.Visibility = value;
+            get => PlaylistContainerVM.Visibility;
+            set => PlaylistContainerVM.Visibility = value;
         }
 
         public BitmapImage? CoverArt
@@ -106,7 +106,7 @@ namespace Player.ViewModel
 
         public bool IsSeeking = false;
 
-        public PlaylistViewModel PlaylistVM;
+        public PlaylistContainerViewModel PlaylistContainerVM;
 
         public PlaybackViewModel(PlaybackService playbackService, MediaLibraryService mediaLibraryService, PlaybackQueue playbackQueue, FilePicker folderPicker)
         {
@@ -138,7 +138,7 @@ namespace Player.ViewModel
 
             PrevPlaybackSpeed = PlaybackSpeed;
 
-            PlaylistVM = new PlaylistViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, this);
+            PlaylistContainerVM = new PlaylistContainerViewModel(_playbackQueue.Size > 0 ? Visibility.Visible : Visibility.Collapsed, _mediaLibraryService, _playbackQueue, this);
 
             _playbackTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
             _playbackTimer.Interval = TimeSpan.FromSeconds(0.3f);
@@ -232,7 +232,7 @@ namespace Player.ViewModel
                 Pause();
             }
 
-            var view = PlaylistVM.GetCurrentActiveView();
+            var view = PlaylistContainerVM.GetCurrentActiveView();
             view?.SetState(true, PlaybackState);
         }
 
@@ -270,7 +270,7 @@ namespace Player.ViewModel
         private void HandleMissingTrack(TrackRecord track)
         {
             _playbackQueue.InvalidateCurrent();
-            PlaylistVM.RemoveTrackSilently(track);
+            PlaylistContainerVM.RemoveTrackSilently(track);
 
             StopEmpty();
 
@@ -328,7 +328,7 @@ namespace Player.ViewModel
                 nameof(CurrentTrackPositionUI)
             );
 
-            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
+            PlaylistContainerVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         public void StopEmpty() 
@@ -368,7 +368,7 @@ namespace Player.ViewModel
                 return;
 
             await PlayTrack(track);
-            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
+            PlaylistContainerVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         [RelayCommand]
@@ -380,7 +380,7 @@ namespace Player.ViewModel
                 return;
 
             await PlayTrack(track);
-            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
+            PlaylistContainerVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         public async Task PlayTrack(TrackRecord track)
@@ -462,8 +462,8 @@ namespace Player.ViewModel
 
             await GetCoverArtAsync(track.Cover);
 
-            PlaylistVM.SetActive(track);
-            PlaylistVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
+            PlaylistContainerVM.SetActive(track);
+            PlaylistContainerVM.GetCurrentActiveView()?.SetState(true, PlaybackState);
         }
 
         private void SetCurrentIndexOfQ(TrackRecord track)
@@ -608,7 +608,7 @@ namespace Player.ViewModel
         public async Task ClearPlaylist()
         {
             Stop();
-            PlaylistVM.Clear();
+            PlaylistContainerVM.Clear();
             StopEmpty();
         }
 
@@ -619,7 +619,7 @@ namespace Player.ViewModel
 
             if (wasPlaybackInitializedNow && tracks.Count > 0)
             {
-                PlaylistVM.SetActive(tracks[0]);
+                PlaylistContainerVM.SetActive(tracks[0]);
             }
             
             return wasPlaybackInitializedNow;
@@ -645,7 +645,7 @@ namespace Player.ViewModel
         {
             foreach (var track in tracks)
             {
-                PlaylistVM.AddTrack(track);
+                PlaylistContainerVM.AddTrack(track);
             }
         }
 
@@ -669,16 +669,5 @@ namespace Player.ViewModel
             return track != null ? $"{track?.Artist} - {track?.Title}" : " ";
         }
 
-        //[RelayCommand]
-        //public void CreatePlaylist()
-        //{
-        //    _mediaLibraryService.CreatePlaylist(
-        //        new Playlist
-        //        {
-        //            Name = "Sus",
-        //            Description = "This"
-        //        }
-        //    );
-        //}
     }
 }

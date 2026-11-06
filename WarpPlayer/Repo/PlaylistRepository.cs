@@ -174,15 +174,15 @@ namespace Player.Repo
             return GetModelFrom(reader);
         }
 
-        private PlaylistRecord GetModelFrom(DbDataReader reader)
+        public static PlaylistRecord GetModelFrom(DbDataReader reader)
         {
             return new PlaylistRecord
             {
                 PlaylistId = Guid.Parse(reader["PlaylistId"].ToString()!),
                 Name = reader["Name"].ToString()!,
                 Description = reader["Description"] is DBNull ? null : reader["Description"].ToString(),
-                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(int.Parse(reader["CreatedAt"].ToString()!)).UtcDateTime,
-                UpdatedAt = DateTimeOffset.FromUnixTimeSeconds(int.Parse(reader["UpdatedAt"].ToString()!)).UtcDateTime,
+                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(reader["CreatedAt"].ToString()!)).UtcDateTime,
+                UpdatedAt = DateTimeOffset.FromUnixTimeSeconds(long.Parse(reader["UpdatedAt"].ToString()!)).UtcDateTime,
             };
         }
 
@@ -201,7 +201,7 @@ namespace Player.Repo
 
             while (reader.Read())
             {
-                result.Add(GetModelFrom(reader));
+                result.Add(DbDataReaderExtensions.ToPlaylistRecord(reader));
             }
 
             return result;

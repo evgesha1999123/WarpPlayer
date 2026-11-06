@@ -81,7 +81,7 @@ namespace Player.Service
             _playlistRepository = playlistRepository;
             _databaseHealthChecker = dbHealthChecker;
 
-            _databaseHealthChecker.CheckAllTablesExists();
+            _databaseHealthChecker.CheckHealth();
         }
 
         public async Task<BitmapImage> GetCoverArt(byte[] imgBytes)

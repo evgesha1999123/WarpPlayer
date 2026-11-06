@@ -27,7 +27,7 @@ namespace WarpPlayerTest
             _factory = _serviceProvider.GetRequiredService<ISqliteConnectionFactory>();
             _healthChecker = _serviceProvider.GetRequiredService<DatabaseHealthChecker>();
 
-            _healthChecker.CheckAllTablesExists();
+            _healthChecker.CheckHealth();
 
             _playlistTrackRepository = new PlaylistTrackRepository(_factory);
             _trackRepository = new TrackRepository(_factory);

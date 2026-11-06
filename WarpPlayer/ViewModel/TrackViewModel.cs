@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
 using NAudio.Wave;
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Player.Schema;
 using Player.Utils.Converter;

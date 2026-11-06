@@ -1,39 +1,69 @@
 ﻿using Microsoft.Data.Sqlite;
 using Player.Database;
+using Player.Schema;
+using System;
+using System.Collections.Specialized;
+using System.Diagnostics;
+using System.DirectoryServices;
 using static Player.Settings.ResourceManifest;
 
 
 namespace Player.Utils.Helper
 {
     public class DatabaseHealthChecker
-    {
-        public readonly string CreatePlaylistTableSql;
-        public readonly string CreateTrackTableSql;
-        public readonly string CreatePlaylistTrackTableSql;
-        
+    {   
         private readonly ISqliteConnectionFactory _connectionFactory;
         private readonly DatabaseResources Database;
+        private readonly OrderedDictionary QueryDictionary = new(); 
 
         public DatabaseHealthChecker(ISqliteConnectionFactory connectionFactory, DatabaseResources database)
         {
             _connectionFactory = connectionFactory;
             Database = database;
 
-            CreatePlaylistTableSql = System.IO.File.ReadAllText(Database.Settings["Playlist"]);
-            CreateTrackTableSql = System.IO.File.ReadAllText(Database.Settings["Track"]);
-            CreatePlaylistTrackTableSql = System.IO.File.ReadAllText(Database.Settings["PlaylistTrack"]);
+            QueryDictionary["Playlist"] = System.IO.File.ReadAllText(Database.Settings["Playlist"]);
+            QueryDictionary["Track"] = System.IO.File.ReadAllText(Database.Settings["Track"]);
+            QueryDictionary["PlaylistTrack"] = System.IO.File.ReadAllText(Database.Settings["PlaylistTrack"]);
         }
 
-        public bool CheckAllTablesExists()
+        public bool CheckHealth()
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
 
-            using var command = connection.CreateCommand();
+            foreach (var query in QueryDictionary.Values)
+            {
+                ExecuteSql(connection, query.ToString()!);
+            }
 
-            EnsurePlaylistTableCreated();
-            EnsureTrackTableCreated();
-            EnsurePlaylistTrackTableCreated();
+            using var command = connection.CreateCommand();
+            command.CommandText = "select * from Playlist order by CreatedAt desc limit 1;";
+
+            var reader = command.ExecuteReader();
+            PlaylistRecord? result = null;
+
+            if (reader.Read())
+            {
+                result = reader.ToPlaylistRecord();
+            }
+
+            reader.Close();
+
+            if (result == null)
+            {
+                command.CommandText = $"insert into Playlist (PlaylistId, Name, Description, CreatedAt, UpdatedAt)" +
+                    $" values ($PlaylistId, $Name, $Description, $CreatedAt, $UpdatedAt);";
+                command.Parameters.AddWithValue("$PlaylistId", Guid.NewGuid().ToString());
+                command.Parameters.AddWithValue("$Name", "MyPlaylist");
+                command.Parameters.AddWithValue("$Description", "System required playlist");
+                command.Parameters.AddWithValue("$CreatedAt", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                command.Parameters.AddWithValue("$UpdatedAt", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                command.ExecuteNonQuery();
+            }
+            else
+            {
+                Debug.WriteLine("Found system playlist! Create skipped.");
+            }
 
             return true;
         }
@@ -42,7 +72,7 @@ namespace Player.Utils.Helper
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
-            ExecuteSql(connection, CreatePlaylistTableSql);
+            ExecuteSql(connection, QueryDictionary["Playlist"]?.ToString()!);
 
             return true;
         }
@@ -51,7 +81,7 @@ namespace Player.Utils.Helper
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
-            ExecuteSql(connection, CreateTrackTableSql);
+            ExecuteSql(connection, QueryDictionary["Track"]?.ToString()!);
 
             return true;
         }
@@ -60,7 +90,7 @@ namespace Player.Utils.Helper
         {
             using var connection = _connectionFactory.Create();
             connection.Open();
-            ExecuteSql(connection, CreatePlaylistTrackTableSql);
+            ExecuteSql(connection, QueryDictionary["PlaylistTrack"]?.ToString()!);
 
             return true;
         }

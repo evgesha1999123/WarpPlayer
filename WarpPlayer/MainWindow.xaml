@@ -193,13 +193,13 @@
                 VerticalAlignment="Stretch"
                 Margin="0,8,15,0">
 
-                <views:PlaylistView
+                <views:PlaylistContainerView
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     MaxWidth="350"
                     MinWidth="100"
                     Visibility="{x:Bind PlaybackVM.PlaylistVisibility, Mode=OneWay}"
-                    DataContext="{x:Bind PlaybackVM.PlaylistVM, Mode=OneWay}" />
+                    DataContext="{x:Bind PlaybackVM.PlaylistContainerVM, Mode=OneWay}" />
 
             </Grid>
 
